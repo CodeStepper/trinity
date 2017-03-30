@@ -3,9 +3,9 @@
 -- release   : v3.5.9
 -- license   : GPL, see LICENSE file
 --
--- Panel zawierający dwa panele o stałych rozmiarach widżetów (fixed) i jeden o zmiennych
--- rozmiarach widżetów znajdujący się na środku (flex).
--- W tym układzie wszystkie trzy widżety muszą być ustawione.
+-- Panel zawierający dwa panele o stałych rozmiarach elementów (fixed) i jeden o zmiennych
+-- rozmiarach elementów znajdujący się na środku (flex).
+-- W tym układzie wszystkie trzy panele muszą być ustawione.
 --
 -- Wzorowany na pliku: trinity/layout/fixed.lua
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -17,6 +17,7 @@ local error        = error
 
 local signal     = require("trinity.signal")
 local visual     = require("trinity.visual")
+local useful     = require("trinity.useful");
 local fillcenter = {}
 
 -- =================================================================================================
@@ -51,10 +52,16 @@ local function new( args )
     retval._ltype = "fillcenter"
 
     -- sprawdź czy podano dobre szablony
-    if type(args.left  ) ~= "table" or args.left._ltype   ~= "fixed" or
-       type(args.center) ~= "table" or args.center._ltype ~= "flex"  or
-       type(args.right ) ~= "table" or args.right._ltype  ~= "fixed" then
-        error( "You passed bad layout on left, right or center position." )
+    if type(args.left  ) ~= "table" or args.left._ltype   ~= "fixed" then
+        error( "You passed bad layout on left position." )
+        return nil
+    end
+    if type(args.center) ~= "table" or args.center._ltype ~= "flex"  then
+        error( "You passed bad layout on left center position." )
+        return nil
+    end
+    if type(args.right ) ~= "table" or args.right._ltype  ~= "fixed" then
+        error( "You passed bad layout on right position." )
         return nil
     end
     
@@ -66,11 +73,7 @@ local function new( args )
     end
     
     -- dodawanie funkcji do obiektu
-    for key, val in pairs(fillcenter) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
+    useful.rewrite_functions( fillcenter, retval )
 
     local groups = args.groups or {}
     

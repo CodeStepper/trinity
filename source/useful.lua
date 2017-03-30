@@ -79,6 +79,21 @@ function useful.timer( timeout, name )
     return useful.timers[timeout]
 end
 
+-- =================================================================================================
+-- Kopiuje funkcje z jednego obiektu do drugiego.
+-- 
+-- @param object Obiekt kopiowany.
+-- @param retval Obiekt do którego mają być skopiowane funkcje.
+-- =================================================================================================
+
+function useful.rewrite_functions( object, retval )
+    for key, val in pairs(object) do
+        if type(val) == "function" then
+            retval[key] = val
+        end
+    end
+end
+
 --[[ return
 ========================================================================================== ]]
 

@@ -39,8 +39,7 @@ local image   = {}
 --   - border_color @ set_border     : Kolor ramki wokół kontrolki.
 --   - border_size  @ set_border     : Rozmiar ramki wokół kontrolki.
 --
--- @param args    Tablica zawierająca wyżej wymienione argumenty (opcjonalny).
--- @param signals Przechwytywane przez kontrolkę sygnały (opcjonalny).
+-- @param args Tablica zawierająca wyżej wymienione argumenty (opcjonalny).
 --
 -- @return Nowy obiekt pola obrazkowego.
 -- =================================================================================================
@@ -51,7 +50,12 @@ local function new( args )
     -- utwórz podstawę elementu
     local retval = {}
     
+    -- inicjalizacja sygnałów
     signal.initialize( retval )
+
+    -- informacje o kontrolce
+    retval._control = "image";
+    retval._type    = "widget";
 
     -- przypisz funkcje do obiektu
     for key, val in pairs(image) do

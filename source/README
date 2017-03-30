@@ -1,0 +1,6 @@
+Zależności:
+alsa-firmware
+alsa-utils
+pulseaudio
+pulseaudio-alsa
+terminus-font

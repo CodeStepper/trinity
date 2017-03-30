@@ -15,6 +15,7 @@ local table        = table
 local io           = io
 local pairs        = pairs
 
+local useful = require("trinity.useful")
 local popup  = require("trinity.popup")
 local edit   = require("trinity.widget.edit")
 local label  = require("trinity.widget.label")
@@ -83,15 +84,15 @@ function prompt:save_history()
     end
     
     -- otwórz plik w trybie do zapisu
-    local f = io.open( self.his_file, "w" )
+    local f = io.open( self.history_file, "w" )
     
     -- utwórz ścieżkę do pliku jeżeli nie istnieje
     if not f then
         local x = 0
-        for dir in self.his_file:gmatch(".-/") do
+        for dir in self.history_file:gmatch(".-/") do
             x = x + #dir
         end
-        util.mkdir( self.his_file:sub(1, x - 1) )
+        util.mkdir( self.history_file:sub(1, x - 1) )
         
         -- ponownie podejmij próbę otwarcia pliku
         f = assert( io.open(id, "w") )
@@ -99,8 +100,8 @@ function prompt:save_history()
     
     -- ilość poleceń nie może być większa niż limit...
     local start = 1
-    if #self.history - self.his_max > 0 then
-        start = #self.history - self.his_max + 1
+    if #self.history - self.history_max > 0 then
+        start = #self.history - self.history_max + 1
     end
     
     -- zapisuj polecenia linia po linii...
@@ -151,7 +152,7 @@ function prompt:add_to_history( command, save )
     end
     
     -- usuń najstarsze polecenie w przypadku przepełnienia historii
-    if #self.history > self.his_max then
+    if #self.history > self.history_max then
         table.remove( self.history, 1 )
     end
     
@@ -170,11 +171,11 @@ end
 
 function prompt:run()
     -- wczytaj historię poleceń
-    local history = self.load_history( self.his_file, self.his_max )
-    
-    self.history = history.table
-    self.his_max = history.max
-    self.his_pos = #self.history + 1
+    local history = self.load_history( self.history_file, self.history_max )
+
+    self.history          = history.table
+    self.history_max      = history.max
+    self.history_position = #self.history + 1
 
     -- pokaż okno
     self:set_visible( true )
@@ -218,15 +219,15 @@ function prompt:custom_bindings( widget, mods, key )
         end
         
         -- zwiększ do 2 gdy licznik zejdzie poniżej
-        if self.his_pos < 2 then
-            self.his_pos = 2
+        if self.history_position < 2 then
+            self.history_position = 2
         end
         
         -- zmniejsz pozycję
-        self.his_pos = self.his_pos - 1
+        self.history_position = self.history_position - 1
     
         -- zapisz aktualny tekst
-        return self.history[self.his_pos]
+        return self.history[self.history_position]
         
     -- następny element w historii poleceń
     elseif key == "Down" then
@@ -235,17 +236,17 @@ function prompt:custom_bindings( widget, mods, key )
         end
     
         -- wykasuj tekst gdy nie ma więcej poleceń
-        if self.his_pos >= #self.history then
-            self.his_pos = #self.history + 1
+        if self.history_position >= #self.history then
+            self.history_position = #self.history + 1
             
             return ""
         end
         
         -- zwiększ pozycję
-        self.his_pos = self.his_pos + 1
+        self.history_position = self.history_position + 1
         
         -- zapisz aktualny tekst
-        return self.history[self.his_pos]
+        return self.history[self.history_position]
         
     -- wykonanie polecenia
     elseif key == "Return" then
@@ -259,7 +260,7 @@ function prompt:custom_bindings( widget, mods, key )
         -- błąd składni?
         if type(result) == "string" then
             -- przewiń licznik na początek historii
-            self.his_pos = #self.history + 1
+            self.history_position = #self.history + 1
             
             -- zwróć błąd do wypisania
             return result
@@ -279,7 +280,6 @@ end
  - args : argumenty pola edycji:
     > history       @ ---
     > entries       @ ---
-    > screen        @ ---
     > background    @ set_background
     > foreground    @ set_foreground
     > border_size   @ ---
@@ -308,31 +308,32 @@ local function new( args )
     local retval = popup( args )
 
     -- przypisz funkcje do obiektu
-    for key, val in pairs(prompt) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
+    useful.rewrite_functions( prompt, retval )
+    -- for key, val in pairs(prompt) do
+    --     if type(val) == "function" then
+    --         retval[key] = val
+    --     end
+    -- end
     
     -- ustaw zmienne (nie można ich potem zmienić w trakcie działania)
-    retval.his_file = args.history or util.getdir("cache") .. "/history"
-    retval.his_max  = args.entries or 50
-    retval.history  = {}
-    retval.his_pos  = 1
+    retval.history_file      = args.history or util.getdir("cache") .. "/history"
+    retval.history_max       = args.entries or 50
+    retval.history           = {}
+    retval.history_position  = 1
     
     -- napis "wykonaj polecenie:" lub własny
     retval.label = label({
         text = args.label or "wykonaj polecenie:"
     })
     
-    -- pole edycji jako linię poleceń
+    -- pole edycji jako linia poleceń
     retval.edit = edit({
         text_wrap    = "char",
         show_empty   = true,
         cursor_type  = "block",
         cursor_color = args.cursor_color
     })
-    
+
     -- kontener dla napisu i pola edycji
     retval.layout = fixed({
         direction  = "y",
@@ -340,7 +341,7 @@ local function new( args )
         padding    = args.padding,
         elem_space = args.elem_space
     })
-    
+
     -- dodaj napis i pole edycji do kontenera
     retval.layout:add( retval.label )
     retval.layout:add( retval.edit )
@@ -349,10 +350,12 @@ local function new( args )
     retval:set_widget( retval.layout )
     
     -- rejestracja zdarzeń dla pola tekstowego
-    retval.edit:connect_signal( "edit::blur", function() retval:stop() end )
+    retval.edit:connect_signal( "edit::blur", function()
+        retval:stop()
+    end )
     retval.edit:connect_signal( "key::press", function(widget, mods, key, refs)
         local val = retval:custom_bindings( widget, mods, key )
-        
+
         if type(val) == "string" then
             refs.string = val
         else
@@ -363,12 +366,11 @@ local function new( args )
     return retval
 end
 
---[[ prompt.mt:xxx
-=============================================================================================
- Tworzenie meta danych dla obiektu.
-========================================================================================== ]]
+--[[ ===================================================================================================================
+    # meta dane
+=================================================================================================================== ]]--
 
-prompt.mt = {}
+prompt.mt      = {}
 prompt.history = {}
 
 function prompt.mt:__call(...)

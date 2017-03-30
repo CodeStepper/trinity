@@ -57,12 +57,8 @@ local function new( args )
     end
     
     -- dodawanie funkcji do obiektu
-    for key, val in pairs(fixed) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
-
+    useful.rewrite_functions( fixed, retval )
+    
     local groups = args.groups or {}
     
     -- nie pozwalaj na dodanie funkcji dla tekstu
@@ -292,15 +288,20 @@ end
 -- Dodaje widżet do listy.
 -- 
 -- @param widget Widżet do dodania.
+-- @param emiter Ustawia aktualny układ jako emiter dla widżetu, domyślnie false.
 --
 -- @return Obiekt układu.
 -- =================================================================================================
 
-function fixed:add( widget )
-    table.insert( self._widgets, widget )    
+function fixed:add( widget, emiter )
+    table.insert( self._widgets, widget )
     
     widget:connect_signal( "widget::updated", self.emit_updated )
     widget:connect_signal( "widget::resized", self.emit_resized )
+
+    if emiter then
+        widget:signal_emiter( self )
+    end
 
     self:emit_signal( "widget::resized" )
     self:emit_signal( "widget::updated" )

@@ -22,6 +22,7 @@ local surface = require("gears.surface")
 local color   = require("gears.color")
 local theme   = require("beautiful")
 local cairo   = require("lgi").cairo
+local useful  = require("trinity.useful")
 local signal  = require("trinity.signal")
 
 local drawbox   = {}
@@ -246,21 +247,15 @@ end
 local function new( args )
     local retval = {}
     local args   = args or {}
-    
+
     -- domyślne wartości dla pustych pól
     args.border_color = args.border_color or theme.border_normal
     args.border_width = args.border_width or theme.border_width or 0
     
     -- inicjalizacja przechwytywania zdarzeń i tworzenie emitera (menedżera zdarzeń)
     signal.initialize( retval, true )
+    useful.rewrite_functions( drawbox, retval )
 
-    -- przypisz funkcje do obiektu
-    for key, val in pairs(drawbox) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
-    
     -- dodatkowe funkcje z obiektu _drawin
     local fcts = { "buttons", "struts", "get_xproperty", "set_xproperty" }
     for key, val in pairs(fcts) do
@@ -272,7 +267,7 @@ local function new( args )
     retval._drawin   = capi.drawin( args )
     retval._drawable = retval._drawin.drawable
     retval._widget   = false
-    
+
     -- przechwytywanie sygnałów
     setup_signals( retval )
     

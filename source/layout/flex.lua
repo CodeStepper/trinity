@@ -6,7 +6,7 @@
 -- Układ rozmieszczający widżety.
 -- Każdy widżet w układzie dostaje tyle samo miejsca.
 -- 
--- Wzorowany na pliku: trinity/layout/flex.lua
+-- Wzorowany na pliku: trinity/layout/fixed.lua
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 local setmetatable = setmetatable
@@ -56,11 +56,7 @@ local function new( args )
     end
     
     -- dodawanie funkcji do obiektu
-    for key, val in pairs(flex) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
+    useful.rewrite_functions( flex, retval )
 
     local groups = args.groups or {}
     
@@ -194,15 +190,20 @@ end
 -- Dodaje widżet do listy.
 -- 
 -- @param widget Widżet do dodania.
+-- @param emiter Ustawia aktualny układ jako emiter dla widżetu, domyślnie false.
 --
 -- @return Obiekt układu.
 -- =================================================================================================
 
-function flex:add( widget )
+function flex:add( widget, emiter )
     table.insert( self._widgets, widget )    
     
     widget:connect_signal( "widget::updated", self.emit_updated )
     widget:connect_signal( "widget::resized", self.emit_resized )
+
+    if emiter then
+        widget:signal_emiter( self )
+    end
 
     self:emit_signal( "widget::resized" )
     self:emit_signal( "widget::updated" )

@@ -435,7 +435,7 @@ end
  - horiz  : przyleganie w poziomie - visual.align_type (klucze).
  - vert   : przyleganie w pionie - visual.align_vtype (klucze).
 ========================================================================================== ]]
- 
+
 function visual.set_align( widget, horiz, vert )
     -- przyleganie poziome
     if horiz ~= nil then
@@ -529,7 +529,8 @@ function visual.draw_visual( widget, cr )
         cr:set_source( widget._back )
         
         -- uwzględnij ramkę
-        temp = self._bsize
+        temp = widget._bsize
+
         cr:rectangle( px + temp[1], py + temp[2], width - temp[1] - temp[3],
             height - temp[2] - temp[4] )
         cr:fill()
@@ -549,16 +550,19 @@ end
  - height : wysokość obszaru rysowania.
 ========================================================================================== ]]
 
-function visual.draw_text( widget, cr, x, y, width, height )
+function visual.draw_text( widget, cr )
+    -- pobierz krawędzie kontrolki
+    local x, y, width, height = widget:get_inner_bounds()
+
     -- przesunięcie w pionie
     local offset = y
-    
+
     -- oblicz przyleganie pionowe
     if height ~= widget._fheight then
         if widget._valign == visual.valign_type.center then
-            offset = (height - widget._fheight) / 2
+            offset = y + ((height - widget._fheight) / 2)
         elseif widget._valign == visual.valign_type.bottom then
-            offset = height - widget._fheight
+            offset = y + height - widget._fheight
         end
     end
     

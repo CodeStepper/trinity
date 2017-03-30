@@ -14,9 +14,17 @@ local setmetatable = setmetatable
 local type         = type
 local pairs        = pairs
 
+local useful  = require("trinity.useful")
 local drawbox = require("trinity.drawbox")
 local signal  = require("trinity.signal")
 local popup   = {}
+
+local capi =
+{
+    awesome = awesome,
+    screen = screen,
+    client = client
+}
 
 --[[ popup:set_widget
 =============================================================================================
@@ -100,7 +108,16 @@ function popup:refresh_geometry()
             width, height = self._drawbox._widget:fit( width, height )
         end
     end
-    
+
+    -- popraw - od wersji 4.0 wyświetla błąd że 0 nie może być w wymiarze kontrolki
+    width  = width  > 0 and width  or 1
+    height = height > 0 and height or 1
+
+    -- local naughty = require("naughty")
+    -- naughty.notify({ preset = naughty.config.presets.critical,
+    --                  title = "Oops, there were errors during startup!",
+    --                  text = tostring(width) .. " " .. tostring(height) })
+
     -- zapisz nowe wymiary okna
     self._drawbox:geometry({
         width  = width,
@@ -217,8 +234,8 @@ function popup:set_limits( minw, minh, maxw, maxh )
     end
     
     -- przerysuj
-    self.emit_resized()
-    self.emit_updated()
+    -- self.emit_resized()
+    -- self.emit_updated()
 end
 
 --[[ popup:set_size
@@ -297,13 +314,8 @@ local function new( args )
         _screen = args.screen or 1,
         _limits = {} -- { min_width, min_height, max_width, max_height }
     }
-    
     -- dodawanie funkcji do obiektu
-    for key, val in pairs(popup) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
+    useful.rewrite_functions( popup, retval )
     
     -- tworzenie panelu
     retval._drawbox = drawbox({
@@ -313,7 +325,7 @@ local function new( args )
         border_color = args.border_color,
         type         = "notification"
     })
-    
+
     -- ponowne rysowanie
     retval.emit_updated = function()
         retval._drawbox:draw()

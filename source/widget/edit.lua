@@ -87,8 +87,7 @@ function edit:draw( cr )
     end
 
     -- rysowanie tekstu
-    local x, y, w, h = self:get_inner_bounds()
-    self:draw_text( cr, x, y, w, h )
+    self:draw_text( cr )
     
     -- kursor liniowy i podkreślenie
     if self._draw_cursor and self._cursor_type ~= edit.cursor_type.block then

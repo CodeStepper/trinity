@@ -5,6 +5,8 @@
  Nowa koncepcja wysyłania / odbierania sygnałów.
 ////////////////////////////////////////////////////////////////////////////////////////// ]]
 
+-- @todo Możliwość wyrzucenia wszystkich przypisanych zdarzeń
+
 --[[ require
 ========================================================================================== ]]
 
@@ -74,6 +76,16 @@ function signal:connect_signal( name, func )
     end
 
     return self
+end
+
+function signal:get_signals()
+    local signames = {}
+
+    for signame, data in pairs(self._signals) do
+        table.insert( signames, signame )
+    end
+
+    return signames
 end
 
 --
@@ -501,6 +513,7 @@ function signal.initialize( object, manager )
     object.add_signal        = signal.add_signal
     object.connect_signal    = signal.connect_signal
     object.multi_connect     = signal.multi_connect
+    object.get_signals       = signal.get_signals
     object.disconnect_signal = signal.disconnect_signal
     object.emit_signal       = signal.emit_signal
     object.signal_emiter     = signal.signal_emiter
@@ -516,18 +529,18 @@ function signal.initialize( object, manager )
         object._mouse_regs  = {}
         object._button_regs = {}
 
-        if manager.mouse_move then
-            object:connect_signal( "mouse::move", signal.move_emiter )
+        for key, val in pairs(manager) do
+            if val == "mouse::move" then
+                object:connect_signal( "mouse::move", signal.move_emiter )
+            elseif val == "mouse::leave" then
+                object:connect_signal( "mouse::leave", signal.leave_emiter )
+            elseif val == "button::press" then
+                object:connect_signal( "button::press", signal.press_emiter )
+            elseif val == "button::release" then
+                object:connect_signal( "button::release", signal.release_emiter )
+            end
         end
-        if manager.mouse_leave then
-            object:connect_signal( "mouse::leave", signal.leave_emiter )
-        end
-        if manager.button_press then
-            object:connect_signal( "button::press", signal.press_emiter )
-        end
-        if manager.button_release then
-            object:connect_signal( "button::release", signal.release_emiter )
-        end
+
     -- ustanów podany obiekt menedżerem
     elseif manager then
         object.signal_emiter   = nil

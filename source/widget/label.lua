@@ -39,13 +39,12 @@ local label  = {}
 --   - text         @ set_text       : Zwykły tekst.
 --   - markup       @ set_markup     : Tekst w formacie PANGO Markup (podobny do HTML).
 --
--- @param args    Tablica zawierająca wyżej wymienione argumenty (opcjonalny).
--- @param signals Przechwytywane przez kontrolkę sygnały (opcjonalny).
+-- @param args Tablica zawierająca wyżej wymienione argumenty (opcjonalny).
 --
 -- @return Nowy obiekt etykiety.
 -- =================================================================================================
 
-local function new( args, signals )
+local function new( args )
     local args = args or {}
 
     -- no niestety, coś trzeba podać w polu tekst lub markup
@@ -56,6 +55,10 @@ local function new( args, signals )
 
     -- inicjalizacja sygnałów
     signal.initialize( retval )
+
+    -- informacje o kontrolce
+    retval._control = "label";
+    retval._type    = "widget";
 
     -- przypisz funkcję do obiektu
     for key, val in pairs(label) do
