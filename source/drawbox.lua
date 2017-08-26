@@ -22,8 +22,8 @@ local surface = require("gears.surface")
 local color   = require("gears.color")
 local theme   = require("beautiful")
 local cairo   = require("lgi").cairo
-local useful  = require("trinity.useful")
-local signal  = require("trinity.signal")
+local useful  = require("trinity.Useful")
+local signal  = require("trinity.Signal")
 
 local drawbox   = {}
 local drawables = setmetatable( {}, { __mode = 'k' } )

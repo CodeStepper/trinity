@@ -1,29 +1,29 @@
 return
 {
     layout = {
-        fixed      = require("trinity.layout.fixed"),
-        flex       = require("trinity.layout.flex"),
-        fillcenter = require("trinity.layout.fillcenter")
+        fixed      = require("trinity.layout.Fixed"),
+        flex       = require("trinity.layout.Flex"),
+        fillcenter = require("trinity.layout.FillCenter")
     },
     widget = {
-        arrow    = require("trinity.widget.arrow"),
-        label    = require("trinity.widget.label"),
-        edit     = require("trinity.widget.edit"),
-        image    = require("trinity.widget.image"),
-        taglist  = require("trinity.widget.taglist"),
-        prompt   = require("trinity.widget.prompt")
+        arrow    = require("trinity.widget.Arrow"),
+        label    = require("trinity.widget.Label"),
+        edit     = require("trinity.widget.TextBox"),
+        image    = require("trinity.widget.Image"),
+        taglist  = require("trinity.widget.TagList"),
+        prompt   = require("trinity.widget.Prompt")
     },
     worker = {
         layout = require("trinity.worker.layout")
     },
     
-    popup     = require("trinity.popup"),
+    popup     = require("trinity.Popup"),
     panel     = require("trinity.panel"),
     drawbox   = require("trinity.drawbox"),
-    visual    = require("trinity.visual"),
-    signal    = require("trinity.signal"),
-    useful    = require("trinity.useful"),
-    variables = require("trinity.variables"),
+    visual    = require("trinity.Visual"),
+    signal    = require("trinity.Signal"),
+    Useful    = require("trinity.Useful"),
+    variables = require("trinity.Variables"),
 
     button  = require("trinity.button" ),
     arrow   = require("trinity.arrow"  ),

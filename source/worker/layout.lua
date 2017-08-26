@@ -35,7 +35,7 @@ end
 -- ==========================================================================================
 
 local function new( widget, args )
-    if args == nil or widget == nil or args.layouts == nil then
+    if args == nil or widget == nil then
         return
     end
 
@@ -61,15 +61,15 @@ local function new( widget, args )
     awful_tag.attached_connect_signal( screen, "property::selected", tag_update )
     
     -- reagowanie na naciśnięcie przycisku
-    if args.nosignal ~= true then
-        widget:connect_signal( "button::release", function(widget, x, y, button)
-            if button == 1 then
-                awful_layout.inc( args.layouts, 1 )
-            elseif button == 3 then
-                awful_layout.inc( args.layouts, -1 )
-            end
-        end )
-    end
+    -- if args.nosignal ~= true then
+    --     widget:connect_signal( "button::release", function(widget, x, y, button)
+    --         if button == 1 then
+    --             awful_layout.inc( args.layouts, 1 )
+    --         elseif button == 3 then
+    --             awful_layout.inc( args.layouts, -1 )
+    --         end
+    --     end )
+    -- end
 end
 
 -- LAYOUT.MT:CALL

@@ -14,9 +14,9 @@ local setmetatable = setmetatable
 local type         = type
 local pairs        = pairs
 
-local useful  = require("trinity.useful")
+local useful  = require("trinity.Useful")
 local drawbox = require("trinity.drawbox")
-local signal  = require("trinity.signal")
+local signal  = require("trinity.Signal")
 local popup   = {}
 
 local capi =

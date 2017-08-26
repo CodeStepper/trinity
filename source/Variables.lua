@@ -1,4 +1,5 @@
-local variables = {
+
+local Variables = {
     MODKEY = "Mod4",     -- przycisk modyfikacji
     LMB    = 1,          -- lewy przycisk myszy
     RMB    = 3,          -- prawy przycisk myszy
@@ -8,16 +9,16 @@ local variables = {
     LMS    = 8,          -- kółko myszy w lewo
     RMS    = 9,          -- kółko myszy w prawo
 
-    text_halign = {
-	    left   = "LEFT",
-	    center = "CENTER",
-	    right  = "RIGHT"
-	},
-	text_valign = {
-	    top    = 1,
-	    center = 2,
-	    bottom = 3
-	}
+    HorizontalAlign = {
+        Left   = "LEFT",
+        Center = "CENTER",
+        Right  = "RIGHT"
+    },
+    VerticalAlign = {
+        Top    = 1,
+        Center = 2,
+        Bottom = 3
+    }
 }
 
-return variables
+return Variables

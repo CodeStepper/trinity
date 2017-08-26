@@ -3,7 +3,7 @@
 
 local wibox = require("wibox")
 local gears = require("gears")
-local defs  = require("trinity.useful")
+local defs  = require("trinity.Useful")
 
 
 local button = { mt = {} }
