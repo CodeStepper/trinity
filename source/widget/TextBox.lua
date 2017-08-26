@@ -527,8 +527,7 @@ local function new( args )
     retval._char_size = {}
     
     -- domyślne wartości
-    args.halign    = args.halign    or "left"
-    args.valign    = args.valign    or "center"
+    args.text_align = args.text_align or "TopLeft"
     args.wrap      = args.wrap      or "char"
     args.ellipsize = args.ellipsize or "start"
     

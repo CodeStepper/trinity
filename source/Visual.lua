@@ -112,16 +112,20 @@ function Visual.initialize( widget, groups, args )
     if widget._visinit ~= nil then
         return
     end
+
+    widget._border = {
+        size    = { 0, 0, 0, 0 },
+        color   = nil,
+        visible = false
+    }
     
     -- utwórz zmienne
     widget._visinit = true
     widget._padding = { 0, 0, 0, 0 }
-    widget._bsize   = { 0, 0, 0, 0 }
-    widget._bcolor  = { 0, 0, 0, 0 }
     widget._bimage  = nil
     widget._back    = nil
+    widget._image   = nil
     widget._fore    = nil
-    widget._border  = false
     widget._tvalign = "CENTER"
     widget._thalign = 2
     widget._ivalign = 2
@@ -296,67 +300,62 @@ end
 ========================================================================================== ]]
 
 function Visual.set_border( widget, color, size )
-    -- brak koloru
-    if color == false then
-        widget._bcolor = nil
-    -- hex lub wzór
-    elseif color ~= nil then
-        widget._bcolor = GColor( color )
+    widget._border.visible = false
+
+    -- wartość false nie zmienia koloru
+    if color == nil then
+        widget._border.color = nil
+    elseif color ~= false then
+        widget._border.color = GColor( color )
     end
-    
-    -- rozmiary ramki
-    if size ~= nil then
-        local obsize = { 0, 0, 0, 0 }
-        local owpadd = { 0, 0, 0, 0 }
-       
-        -- rozmiar starej ramki
-        if type(widget._bsize) == "table" and #widget._bsize == 4 then
-            obsize = {
-                widget._bsize[1],
-                widget._bsize[2],
-                widget._bsize[3],
-                widget._bsize[4]
-            }
-        end
-        -- rozmiar wcięcia
-        if type(widget._padding) == "table" and #widget._padding == 4 then
-            owpadd = {
-                widget._padding[1],
-                widget._padding[2],
-                widget._padding[3],
-                widget._padding[4]
-            }
-        end
+
+    if size then
+        -- stary rozmiar ramki
+        local obsize = {
+            widget._border.size[1],
+            widget._border.size[2],
+            widget._border.size[3],
+            widget._border.size[4]
+        }
+        -- aktualne wcięcie
+        local owpadd = type(widget._padding) == "table" and #widget._padding == 4 
+            and {
+                    widget._padding[1],
+                    widget._padding[2],
+                    widget._padding[3],
+                    widget._padding[4]
+                }
+            or  { 0, 0, 0, 0 }
         
-        -- zamień liczbę na tablice
+        -- cała ramka ma taką samą grubość
         if type(size) == "number" then
-            widget._bsize = { size, size, size, size }
-        -- błędne dane, 0 grubość linii
-        elseif type(size) ~= "table" or #size ~= 4 then
-            widget._bsize = { 0, 0, 0, 0 }
-        -- grubość linii podana w tabeli
+            widget._border.size = { size, size, size, size }
+        -- z dwóch wartości tworzy 2 grupy - lewo=prawo, góra=dół
+        elseif type(size) == "table" and #size == 2 then
+            widget._border.size = { size[1], size[2], size[1], size[2] }
+        -- każdy bok może mieć inną długość
+        elseif type(size) == "table" and #size == 4 then
+            widget._border.size = { size[1], size[2], size[3], size[4] }
         else
-            widget._bsize = size
+            widget._border.size = { 0, 0, 0, 0 }
         end
         
-        -- oblicz nowe wcięcia
+        -- przelicz ponownie wcięcia
         widget._padding = {
-            owpadd[1] - obsize[1] + widget._bsize[1],
-            owpadd[2] - obsize[2] + widget._bsize[2],
-            owpadd[3] - obsize[3] + widget._bsize[3],
-            owpadd[4] - obsize[4] + widget._bsize[4]
+            owpadd[1] - obsize[1] + widget._border.size[1],
+            owpadd[2] - obsize[2] + widget._border.size[2],
+            owpadd[3] - obsize[3] + widget._border.size[3],
+            owpadd[4] - obsize[4] + widget._border.size[4]
         }
     end
     
-    -- przełącznik dla rysowania ramki (przyspieszenie działania)
-    if widget._bsize ~= nil and (widget._bsize[1] > 0 or widget._bsize[2] > 0
-    or widget._bsize[3] > 0 or widget._bsize[4] > 0) and widget._bcolor ~= nil then
-        widget._border = true
-    else
-        widget._border = false
+    -- sprawdź czy ramka będzie rysowana
+    if (widget._border.size[1] > 0 or widget._border.size[2] > 0 or
+        widget._border.size[3] > 0 or widget._border.size[4] > 0) and
+        widget._border.color then
+        widget._border.visible = true
     end
 
-    -- wyślij sygnał aktualizacji elementu
     widget:emit_signal( "widget::resized" )
     widget:emit_signal( "widget::updated" )
 end
@@ -508,7 +507,7 @@ end
 ========================================================================================== ]]
 
 function Visual.draw_visual( widget, cr )
-    if not widget._border and not widget._back then
+    if not widget._border and widget._back == nil and widget._image == nil then
         return
     end
 
@@ -517,55 +516,55 @@ function Visual.draw_visual( widget, cr )
     local width, height = widget._bounds[5], widget._bounds[6]
 
     cr:save()
-
-    -- sprawdź czy na pewno trzeba rysować ramkę
-    if widget._border then
-        local size = widget._bsize
-        
-        -- ustaw kolor ramki
-        cr:set_source( widget._bcolor )
-
-        -- lewo (od dołu do góry)
-        if size[1] then
-            temp = size[1] - 1
-        
-            cr:move_to( px + temp, height )
-            cr:line_to( px + temp, py )
-        end
-        -- góra (od lewej do prawej)
-        if size[2] then
-            temp = size[2] - 1
-        
-            cr:move_to( px, py + temp )
-            cr:line_to( width, py + temp )
-        end
-        -- prawo (od góry do dołu)
-        if size[3] then
-            temp = size[3] - 1
-        
-            cr:move_to( width - temp, py )
-            cr:line_to( width - temp, height )
-        end
-        -- dół (od prawej do lewej)
-        if size[4] then
-            temp = size[4] - 1
-        
-            cr:move_to( width, height - temp )
-            cr:line_to( px, height - temp )
-        end
-        
-        cr:stroke()
-    end
     
-    -- nie rysuj gdy nie potrzeba
+    -- tło w kolorze
     if widget._back then
         cr:set_source( widget._back )
         
         -- uwzględnij ramkę
         temp = widget._bsize
 
-        cr:rectangle( px + temp[1], py + temp[2], width - temp[1] - temp[3],
-            height - temp[2] - temp[4] )
+        cr:rectangle( px, py, width, height )
+        cr:fill()
+    end
+
+    -- sprawdź czy na pewno trzeba rysować ramkę
+    if widget._border.visible then
+        local size = widget._border.size
+        cr:set_source( widget._border.color )
+
+        -- góra (od lewej do prawej)
+        if size[1] then
+            cr:move_to( px, py )
+            cr:rel_line_to( 0, height )
+            cr:rel_line_to( size[1], -size[4] )
+            cr:rel_line_to( 0, -height + size[2] + size[4] )
+            cr:close_path()
+        end
+        if size[2] then
+            cr:move_to( px, py )
+            cr:rel_line_to( width, 0 )
+            cr:rel_line_to( -size[1], size[2] )
+            cr:rel_line_to( -width + size[1] + size[3], 0 )
+            cr:close_path()
+        end
+        -- prawo (od góry do dołu)
+        if size[3] then
+            cr:move_to( px + width, py )
+            cr:rel_line_to( 0, height )
+            cr:rel_line_to( -size[3], -size[4] )
+            cr:rel_line_to( 0, -height + size[4] + size[2] )
+            cr:close_path()
+        end
+        -- dół (od prawej do lewej)
+        if size[4] then
+            cr:move_to( px, py + height )
+            cr:rel_line_to( width, 0 )
+            cr:rel_line_to( -size[3], -size[4] )
+            cr:rel_line_to( -width + size[3] + size[1], 0 )
+            cr:close_path()
+        end
+        
         cr:fill()
     end
     

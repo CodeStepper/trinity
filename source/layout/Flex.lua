@@ -174,6 +174,7 @@ function Flex:fit( width, height )
         
         if #self._widgets then
             part_width = new_width / #self._widgets
+            part_width = part_width + 0.5 - (part_width + 0.5) % 1
         end
 
         -- oblicz rozmiary elementów podłączonych
