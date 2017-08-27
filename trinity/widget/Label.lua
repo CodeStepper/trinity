@@ -73,9 +73,6 @@ local Label  = {}
 local function new( args )
 	local args = args or {}
 
-	-- no niestety, coś trzeba podać w polu tekst lub markup
-	args.text = args.text or "example"
-
 	-- utwórz podstawę pola tekstowego
 	local retval = {}
 
@@ -100,7 +97,7 @@ local function new( args )
 	retval:show_empty( args.show_empty or false, false )
 	
 	-- uruchamianie zadania dla kontrolki
-	if args.worker ~= nil then
+	if args.worker ~= nil then		
 		retval.worker = {}
 		args.worker( retval, args )
 	end

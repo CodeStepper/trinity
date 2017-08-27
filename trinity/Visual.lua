@@ -30,7 +30,7 @@ local type   = type
 local Theme   = require("beautiful")
 local LGI     = require("lgi")
 local GColor  = require("gears.color")
-local Surface = require("gears.surface")
+local Useful  = require("trinity.Useful")
 local Visual  = {}
 
 -- Przyleganie poziome dla tekstu.
@@ -112,6 +112,29 @@ Visual.IMAGE_EXTEND_TYPE = {
 --[[
  * Inicjalizuje zmienne i funkcje wyglądu dla kontrolki.
  *
+ * DESCRIPTION:
+ *     Lista grup i argumentów możliwych do stylizacji:
+ *         - background
+ *             - back_color - kolor kontrolki
+ *         - image
+ *             - back_image - obraz w tle kontrolki
+ *             - image_align - przyleganie obrazu do wybranej krawędzi
+ *             - image_size - powiększanie obrazu
+ *             - image_extend - uzupełnianie pustej przestrzeni
+ *         - padding
+ *             - padding - margines wewnętrzny
+ *         - border
+ *             - border_size - rozmiar ramki
+ *             - border_color - kolor ramki
+ *         - foreground
+ *             - foreground - kolor czcionki
+ *         - text
+ *             - ellipsize - skracanie zbyt długiego tekstu
+ *             - text_align - przyleganie tekstu do krawędzi kontrolki
+ *             - wrap - zawijanie tekstu
+ *             - markup - tekst w postaci Pango Markup
+ *             - text - zwykły tekst do wyświetlenia
+ * 
  * PARAMETERS:
  *     widget Element do stylizacji [automat].
  *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
@@ -185,14 +208,14 @@ function Visual.Initialize( widget, groups, args )
 	-- wcięcie
 	if group.padding then
 		widget.SetPadding = Visual.SetPadding
-		widget:SetPadding( args.padding, false )
+		widget:SetPadding( args.padding or 0, false )
 	end
 	-- ramka
 	if group.border then
 		widget.SetBorderSize  = Visual.SetBorderSize
 		widget.SetBorderColor = Visual.SetBorderColor
 
-		widget:SetBorderSize( args.border_size, false )
+		widget:SetBorderSize( args.border_size or 0, false )
 			:SetBorderColor( args.border_color, false )
 	end
 	-- kolor czcionki
@@ -526,13 +549,7 @@ end
 function Visual.SetImage( widget, image, refresh )
 	-- ściezka do obrazka - załaduj obrazek
 	if type(image) == "string" then
-		local success, result = pcall( Surface.load, image )
-
-		if not success then
-			error( "Error while reading '" .. image .. "': " .. result )
-			return widget
-		end
-		image = result
+		image = Useful.LoadImage( image )
 	end
 	if image == nil then
 		widget._image.dims    = { 0, 0 }

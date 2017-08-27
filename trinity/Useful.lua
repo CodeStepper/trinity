@@ -26,19 +26,27 @@
 local pairs = pairs
 local type  = type
 
-local Beautiful = require("beautiful")
-local Pango     = require("lgi").Pango
-local Useful    = {}
+local Pango   = require("lgi").Pango
+local Surface = require("gears.surface")
+local Useful  = {}
 
+-- Styl czcionki.
+-- =============================================================================
 Useful.FONT_STYLE = {
 	Normal  = Pango.Style.NORMAL,
 	Italic  = Pango.Style.ITALIC,
 	Oblique = Pango.Style.OBLIQUE
 }
+
+-- Wariant czcionki (jeżeli czcionka wspiera).
+-- =============================================================================
 Useful.FONT_VARIANT = {
 	Normal    = Pango.Variant.NORMAL,
 	SmallCaps = Pango.Variant.SMALL_CAPS
 }
+
+-- Grubość czcionki.
+-- =============================================================================
 Useful.FONT_WEIGHT = {
 	Thin       = Pango.Weight.THIN,
 	UltraLight = Pango.Weight.ULTRALIGHT,
@@ -53,6 +61,9 @@ Useful.FONT_WEIGHT = {
 	Heavy      = Pango.Weight.HEAVY,
 	UltraHeavy = Pango.Weight.ULTRAHEAVY
 }
+
+-- Rozciągnie tekstu (jeżeli czcionka wspiera).
+-- =============================================================================
 Useful.FONT_STRETCH = {
 	UltraCondensed = Pango.Stretch.ULTRA_CONDENSED,
 	ExtraCondensed = Pango.Stretch.EXTRA_CONDENSED,
@@ -64,6 +75,9 @@ Useful.FONT_STRETCH = {
 	ExtraExpanded  = Pango.Stretch.EXTRA_EXPANDED,
 	UltraExpanded  = Pango.Stretch.ULTRA_EXPANDED
 }
+
+-- Grawitacja czcionki (w którą stronę litery będą rysowane).
+-- =============================================================================
 Useful.FONT_GRAVITY = {
 	South = Pango.Gravity.SOUTH,
 	East  = Pango.Gravity.EAST,
@@ -72,15 +86,16 @@ Useful.FONT_GRAVITY = {
 	Auto  = Pango.Gravity.AUTO
 }
 
---[[ Useful.monospace_font_list
-=============================================================================================
- Pobiera czcionki o stałej szerokości.
- 
- - layout : obiekt Pango.Layout.
-========================================================================================== ]]
-
+--[[
+ * Tworzy listę czcionek o stałej szerokości zainstalowanych w systemie.
+ *
+ * PARAMETERS:
+ *     layout Obiekt Pango.Layout
+ *
+ * RETURNS:
+ *     Lista czcionek o stałej szerokości.
+]]-- ===========================================================================
 function Useful.MonospaceFontList( layout )
-	-- zwróć istniejącą listę
 	if Useful.monospace_fonts ~= nil then
 		return Useful.monospace_fonts
 	end
@@ -98,51 +113,100 @@ function Useful.MonospaceFontList( layout )
 	return Useful.monospace_fonts
 end
 
+--[[
+ * Tworzy obiekt zawierający opis czcionki.
+ *
+ * DESCRIPTION:
+ *     Opis czcionki składa się z kilku elementów.
+ *     Spośród wszystkich należy podać przynajmniej rodzinę czcionki.
+ *     Lista możliwych opcji z których tworzony jest opis:
+ *         - family - rodzina czcionki
+ *         - style - jeden z Useful.FONT_STYLE
+ *         - variant - jeden z Useful.FONT_VARIANT
+ *         - weight - jeden z Useful.FONT_WEIGHT
+ *         - stretch - jeden z Useful.FONT_STRETCH
+ *         - size - rozmiar czcionki
+ *         - gravity - jeden z Useful.FONT_GRAVITY
+ *     Każdy opis jest zapisywany i identyfikowany przez podawaną nazwę.
+ *     Można go potem pobrać używająć funkcji Useful.GetFontDescription.
+ * 
+ * PARAMETERS:
+ *     name    Nazwa pod którą zapisany będzie opis czcionki.
+ *     options Opcje używane podczas tworzenia obiektu opisu czcionki.
+]]-- ===========================================================================
 function Useful.CreateFontDescription( name, options )
-	if Useful.fonts == nil then
+	if not Useful.fonts then
 		Useful.fonts = {}
 	end
 
-	if type(options) ~= "table" or options.family == nil then
+	if type(options) ~= "table" or not options.family then
 		return
 	end
 
 	local desc = Pango.FontDescription.new()
 
 	-- rodzina
-	if options.family ~= nil then
-		Pango.FontDescription.set_family( desc, options.family )
+	if options.family then
+		Pango.FontDescription.set_family(
+			desc,
+			options.family
+		)
 	end
 	-- styl czcionki
-	if options.style ~= nil then
-		Pango.FontDescription.set_style( desc, Useful.FONT_STYLE[options.style] )
+	if options.style then
+		Pango.FontDescription.set_style(
+			desc,
+			Useful.FONT_STYLE[options.style]
+		)
 	end
 	-- wariant
-	if options.variant ~= nil then
-		Pango.FontDescription.set_variant( desc, Useful.FONT_VARIANT[options.variant] )
+	if options.variant then
+		Pango.FontDescription.set_variant(
+			desc,
+			Useful.FONT_VARIANT[options.variant]
+		)
 	end
 	-- grubość
-	if options.weight ~= nil then
-		Pango.FontDescription.set_weight( desc, Useful.FONT_WEIGHT[options.weight] )
+	if options.weight then
+		Pango.FontDescription.set_weight(
+			desc,
+			Useful.FONT_WEIGHT[options.weight]
+		)
 	end
 	-- rozciągnięcie liter czcionki
-	if options.stretch ~= nil then
-		Pango.FontDescription.set_stretch( desc, Useful.FONT_STRETCH[options.stretch] )
+	if options.stretch then
+		Pango.FontDescription.set_stretch(
+			desc,
+			Useful.FONT_STRETCH[options.stretch]
+		)
 	end
-	-- rozmiar czcionki
-	if options.size == nil and Pango.FontDescription.get_size( desc ) == 0 then
-		Pango.FontDescription.set_size( desc, 12 * Pango.SCALE )
-	elseif options.size ~= nil then
-		Pango.FontDescription.set_size( desc, options.size * Pango.SCALE )
-	end
+	-- rozmiar czcionki, domyślnie 12
+	Pango.FontDescription.set_size(
+		desc,
+		options.size
+			and options.size * Pango.SCALE
+			or  12 * Pango.SCALE
+	)
 	-- punkt grawitacji
-	if options.gravity ~= nil then
-		Pango.FontDescription.set_gravity( desc, Useful.FONT_GRAVITY[options.gravity] )
+	if options.gravity then
+		Pango.FontDescription.set_gravity(
+			desc,
+			Useful.FONT_GRAVITY[options.gravity]
+		)
 	end
 
 	Useful.fonts[name] = desc
 end
 
+--[[
+ * Pobiera obiekt opisu zapisany wcześniej pod podaną w argumencie nazwą.
+ * 
+ * PARAMETERS:
+ *     name Nazwa pod którą został zapisany obiekt opisu czcionki.
+ *
+ * RETURNS:
+ *     Obiekt opisu czcionki lub nil gdy brak.
+]]-- ===========================================================================
 function Useful.GetFontDescription( name )
 	if Useful.fonts == nil then
 		return nil
@@ -150,30 +214,43 @@ function Useful.GetFontDescription( name )
 	return Useful.fonts[name]
 end
 
---[[ Useful.timer
-=============================================================================================
- Tworzenie czasomierza.
- W przypadku gdy został już utworzony, zwraca go.
- 
- - timeout : co ile sekund zdarzenie "timeout" ma zostac wywoływane.
- - name    : unikalna nazwa czasomierza - używana do zwracania istniejących.
-
- - return : timer
-========================================================================================== ]]
-
+--[[
+ * Tworzy obiekt wywołujący sygnał po upływie podanej ilości czasu.
+ *
+ * DESCRIPTION:
+ *     Do licznika można podpiąć zdarzenie, które będzie wywoływane po upływie
+ *     określonego czasu podawanego w sekundach.
+ *     
+ *     Przed utworzeniem nowego licznika funkcja sprawdza czy nie został już
+ *     wcześniej utworzony licznik wywoływany z takim samym odstępem.
+ *     
+ *     Każdy licznik można nazwać, podając jego nazwę w drugim parametrze.
+ *     Takim sposobem można utworzyć kilka liczników zawierających ten sam
+ *     interwał czasowy.
+ *
+ *     Podanie innej wartości dla odstępu ale tej samej nazwy nie utworzy nowego
+ *     licznika a zwróci stary z oryginalnym interwałem czasowym!
+ *
+ * PARAMETERS:
+ *     timeout Odstęp czasu po jakim sygnał ma został wywołany.
+ *     name    Nazwa pod którą ma zostać zapisany czasomierz.
+ *
+ * RETURNS:
+ *     Obiekt utworzonego licznika.
+]]-- ===========================================================================
 function Useful.Timer( timeout, name )
 	if type(timeout) ~= "number" then
 		return
 	end
 	
 	-- utwórz tablice gdy brak
-	if Useful.timers == nil then
+	if not Useful.timers then
 		Useful.timers = {}
 	end
 
 	-- brak nazwy, sprawdzaj po wartościach
-	if name ~= nil then
-		if Useful.timers[name] ~= nil then
+	if name then
+		if Useful.timers[name] then
 			return Useful.timers[name]
 		end
 		
@@ -182,7 +259,7 @@ function Useful.Timer( timeout, name )
 	end
 
 	-- sprawdzaj czasomierze po nazwach
-	if Useful.timers[timeout] ~= nil then
+	if Useful.timers[timeout] then
 		return Useful.timers[timeout]
 	end
 	
@@ -190,13 +267,13 @@ function Useful.Timer( timeout, name )
 	return Useful.timers[timeout]
 end
 
--- =================================================================================================
--- Kopiuje funkcje z jednego obiektu do drugiego.
--- 
--- @param object Obiekt kopiowany.
--- @param retval Obiekt do którego mają być skopiowane funkcje.
--- =================================================================================================
-
+--[[
+ * Przypisuje funkcje z jednego obiektu do drugiego.
+ *
+ * PARAMETERS:
+ *     object Obiekt z którego funkcje będą kopiowane.
+ *     retval Obiekt do którego funkcje mają być kopiowane.
+]]-- ===========================================================================
 function Useful.RewriteFunctions( object, retval )
 	for key, val in pairs(object) do
 		if type(val) == "function" then
@@ -205,14 +282,23 @@ function Useful.RewriteFunctions( object, retval )
 	end
 end
 
-function Useful.Ternary( val, first, second )
-	if val then
-		return first
-	end
-	return second
-end
+--[[
+ * Wczytuje obraz z pliku i zwraca go.
+ *
+ * PARAMETERS:
+ *     path Ścieżka obrazu do wczytania.
+ *
+ * RETURNS:
+ *     Obiekt surface zawierający wczytany obraz lub wartość false.
+]]-- ===========================================================================
+function Useful.LoadImage( path )
+	local success, result = pcall( Surface.load, path )
 
---[[ return
-========================================================================================== ]]
+	if not success then
+		error( "Error while reading '" .. path .. "': " .. result )
+		return false
+	end
+	return result
+end
 
 return Useful

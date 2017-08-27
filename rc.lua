@@ -314,8 +314,6 @@ awful.screen.connect_for_each_screen(function(s)
 			padding    = {5, 0, 5, 0},
 			back_color = "#111399"
 		})
-		:connect_signal("button::press", avcxx2)
-		:connect_signal("button::release", avcxx)
 
 		widgets.wids[s][2] = trinity.widget.label({
 			text       = "Trzeci widżet",
@@ -339,37 +337,33 @@ awful.screen.connect_for_each_screen(function(s)
 		})
 
 		widgets.wids[s][6] = trinity.widget.label({
-			text       = "Pierwszy widżet",
-			groups     = {"background", "image"},
-			back_color = "#011349",
-			text_align = "Top",
-			back_image = beautiful.titlebar_close_button_normal
-		})
-
-		trinity.Useful.CreateFontDescription("Font8DJV", {
-			family = "DejaVu Sans",
-			size = 8
+			groups      = {"background", "image", "padding"},
+			back_color  = "#011349",
+			padding     = { 18, 0, 0, 0 },
+			image_size  = "Original",
+			image_align = "Left",
+			worker      = trinity.worker.layout,
+			worker_text = true
 		})
 
 		widgets.wids[s][7] = trinity.widget.label({
-			text       = "Drugi widżet",
-			groups     = {"background", "border"},
-			back_color = "#111399",
-			halign     = "Center",
-			valign     = "Center",
-			border_size = { 2, 4, 4, 2 },
-			border_color = "#ff0000",
-			font       = trinity.Useful.GetFontDescription("Font8DJV")
+			text        = "Drugi widżet",
+			groups      = {"background", "image", "padding"},
+			back_color  = "#111399",
+			image_size  = "Original",
+			image_align = "Left",
+			padding     = { 18, 0, 0, 0 },
+			worker      = trinity.sound
 		})
-		:connect_signal("button::press", avcxx2)
-		:connect_signal("button::release", avcxx)
 
 		widgets.wids[s][8] = trinity.widget.label({
-			text       = "Trzeci widżet",
-			groups     = {"background"},
-			background = "#425349",
-			halign     = "Left",
-			valign     = "Top"
+			text        = "Trzeci widżet",
+			groups      = {"background", "image", "padding"},
+			back_color  = "#425349",
+			image_size  = "Original",
+			image_align = "Left",
+			padding     = { 18, 0, 0, 0 },
+			worker      = trinity.battery
 		})
 
 		widgets.wids[s][9] = trinity.widget.arrow({
@@ -388,7 +382,7 @@ awful.screen.connect_for_each_screen(function(s)
 						  :add( widgets.wids[s][4] )
 						  :add( widgets.wids[s][5] )
 
-		widgets.lays[s][3]:add( widgets.wids[s][6] )
+		widgets.lays[s][3]:add( widgets.wids[s][6], true )
 						  :add( widgets.wids[s][7], true )
 						  :add( widgets.wids[s][8] )
 						  -- :add( widgets.battery )

@@ -65,7 +65,7 @@ function battery.update( widget )
     worker.data.capacity = math.min( tonumber(load_file( path .. "capacity" ) or 0), 100 )
     
     -- ustaw pojemność baterii
-    widget:set_text( worker.data.capacity .. "%" )
+    widget:SetText( worker.data.capacity .. "%" )
     
     -- rozpoznaj odpowiedni status elementu
     if worker.data.status == 0 then
@@ -81,7 +81,7 @@ function battery.update( widget )
     end
     
     -- ustaw ikonę baterii
-    widget:set_image( image )
+    widget:SetImage( image )
 end
 
 -- NEW

@@ -14,7 +14,7 @@ return
         prompt   = require("trinity.widget.Prompt")
     },
     worker = {
-        layout = require("trinity.worker.layout")
+        layout = require("trinity.worker.Layout")
     },
     
     popup     = require("trinity.Popup"),
