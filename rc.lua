@@ -357,7 +357,7 @@ awful.screen.connect_for_each_screen(function(s)
 			back_color = "#111399",
 			halign     = "Center",
 			valign     = "Center",
-			border_size = 8,
+			border_size = { 2, 4, 4, 2 },
 			border_color = "#ff0000",
 			font       = trinity.Useful.GetFontDescription("Font8DJV")
 		})
