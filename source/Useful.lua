@@ -205,6 +205,13 @@ function Useful.rewrite_functions( object, retval )
     end
 end
 
+function Useful.Ternary( val, first, second )
+    if val then
+        return first
+    end
+    return second
+end
+
 --[[ return
 ========================================================================================== ]]
 

@@ -234,14 +234,12 @@ local widgets = {
     battery = {}
 }
 
-function avcxx()
-            naughty.notify({ preset = naughty.config.presets.critical,
-                     title = "Oops, there were errors during startup!",
-                     text = awesome.startup_errors })
+function avcxx(a)
+    a:SetBackground( "#C0AA11" )
 end
 
 function avcxx2(a)
-    a:set_background("#000000")
+    a:SetBackground( "#000" )
 end
 
 -- bateria
@@ -286,7 +284,8 @@ awful.screen.connect_for_each_screen(function(s)
             direction = "x"
         })
         widgets.lays[s][3] = trinity.layout.flex({
-            direction = "x"
+            direction = "x",
+            emiter    = { "button::press", "button::release"}
         })
         widgets.lays[s][0] = trinity.layout.fillcenter({
             direction = "x",
@@ -313,20 +312,20 @@ awful.screen.connect_for_each_screen(function(s)
             groups     = {"padding"},
             groups     = {"background"},
             padding    = {5, 0, 5, 0},
-            background = "#111399"
+            back_color = "#111399"
         })
         :connect_signal("button::press", avcxx2)
         :connect_signal("button::release", avcxx)
 
         widgets.wids[s][2] = trinity.widget.label({
             text       = "Trzeci widżet",
-            background = "#425349"
+            back_color = "#425349"
         })
 
         widgets.wids[s][3] = trinity.widget.label({
             text       = "Pierwszy widżet",
             groups     = {"background"},
-            background = "#011349"
+            back_color = "#011349"
         })
         widgets.wids[s][4] = trinity.widget.label({
             text    = "Drugi widżet",
@@ -341,10 +340,10 @@ awful.screen.connect_for_each_screen(function(s)
 
         widgets.wids[s][6] = trinity.widget.label({
             text       = "Pierwszy widżet",
-            groups     = {"background"},
-            background = "#011349",
-            halign     = "Right",
-            valign     = "Bottom"
+            groups     = {"background", "image"},
+            back_color = "#011349",
+            text_align = "Top",
+            back_image = beautiful.titlebar_close_button_normal
         })
 
         trinity.Useful.create_font_description("Font8DJV", {
@@ -358,10 +357,12 @@ awful.screen.connect_for_each_screen(function(s)
             back_color = "#111399",
             halign     = "Center",
             valign     = "Center",
-            border_size = 5,
+            border_size = 8,
             border_color = "#ff0000",
             font       = trinity.Useful.get_font_description("Font8DJV")
         })
+        :connect_signal("button::press", avcxx2)
+        :connect_signal("button::release", avcxx)
 
         widgets.wids[s][8] = trinity.widget.label({
             text       = "Trzeci widżet",
@@ -388,7 +389,7 @@ awful.screen.connect_for_each_screen(function(s)
                           :add( widgets.wids[s][5] )
 
         widgets.lays[s][3]:add( widgets.wids[s][6] )
-                          :add( widgets.wids[s][7] )
+                          :add( widgets.wids[s][7], true )
                           :add( widgets.wids[s][8] )
                           -- :add( widgets.battery )
 

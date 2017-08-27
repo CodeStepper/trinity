@@ -387,8 +387,8 @@ function Arrow:draw( cr )
         return
     end
     
-    local back = (self._near_widget and self._near_widget._back) and self._near_widget._back or self._back
-    local fore = (self._far_widget  and self._far_widget._back ) and self._far_widget._back  or self._fore
+    local back = (self._near_widget and self._near_widget._bgcolor) and self._near_widget._bgcolor or self._bgcolor
+    local fore = (self._far_widget  and self._far_widget._bgcolor ) and self._far_widget._bgcolor  or self._text.color
 
     -- nie rysuj coś czego nie ma...
     if not self._border and back == nil and fore == nil then
@@ -547,7 +547,7 @@ local function new( args )
     end
     
     -- inicjalizacja grup i funkcji
-    Visual.initialize( retval, groups, args )
+    Visual.Initialize( retval, groups, args )
     
     -- aktualizacja elementu
     retval.emit_updated = function()

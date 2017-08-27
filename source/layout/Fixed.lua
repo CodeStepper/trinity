@@ -95,7 +95,7 @@ local function new( args )
     end
 
     -- inicjalizacja strefy odpowiedzialnej za wygląd
-    Visual.initialize( retval, groups, args )
+    Visual.Initialize( retval, groups, args )
     
     -- kierunek umieszczania elementów
     retval._widgets = {}
@@ -126,7 +126,7 @@ end
 
 function Fixed:draw( cr )
     -- część wizualna
-    self:draw_visual( cr )
+    self:DrawVisual( cr )
     
     -- rysuj elementy ze zmienionym kolorem czcionki
     if self._fore then

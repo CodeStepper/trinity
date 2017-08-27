@@ -94,17 +94,10 @@ local function new( args )
     table.insert( groups, "text" )
     
     -- inicjalizacja grup i funkcji
-    Visual.initialize( retval, groups, args )
+    Visual.Initialize( retval, groups, args )
     
     -- ustaw dodatkowe zmienne
     retval:show_empty( args.show_empty or false, false )
-    
-    -- tekst
-    if type(args.markup) == "string" then
-        retval:set_markup( args.markup )
-    else
-        retval:set_text( args.text )
-    end
     
     -- uruchamianie zadania dla kontrolki
     if args.worker ~= nil then
@@ -126,10 +119,11 @@ function Label:draw( cr )
     if self._bounds[5] == 0 or self._bounds[6] == 0 then
         return
     end
-    
+
     -- rysuj kontrolkę i tekst
-    self:draw_visual( cr )
-    self:draw_text( cr )
+    self:DrawVisual( cr )
+    self:DrawText( cr )
+
 end
 
 -- =================================================================================================
@@ -151,7 +145,6 @@ function Label:fit( width, height )
     
     -- zerowe wymiary (lub jeden z nich) - lub gdy kontrolka się nie zmieści
     if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
-        -- @info
         return 0, 0
     end
     
@@ -160,14 +153,18 @@ function Label:fit( width, height )
     new_height = height > 0 and height - marh or height
     
     -- wymiary tekstu
-    local tw, th = self:calc_text( new_width, new_height )
+    local tw, th = self:CalcTextDims( new_width, new_height )
 
     -- zerowe wymiary
     if (not self._drawnil and tw == 0) or th == 0 then
-        -- @info
         return 0, 0
     end
     
+    if self.CalcImageScale then
+        self:CalcImageScale( width, height )
+        -- self:CalcImageScale( tw + marw, th + marh )
+    end
+
     -- dodaj wcięcia
     return tw + marw, th + marh
 end

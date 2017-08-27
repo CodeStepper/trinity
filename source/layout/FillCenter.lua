@@ -111,7 +111,7 @@ local function new( args )
     end
 
     -- inicjalizacja strefy odpowiedzialnej za wygląd
-    Visual.initialize( retval, groups, args )
+    Visual.Initialize( retval, groups, args )
 
     -- aktualizacja elementu
     retval.emit_updated = function()
@@ -141,7 +141,7 @@ end
 
 function FillCenter:draw( cr )
     -- część wizualna
-    self:draw_visual( cr )
+    self:DrawVisual( cr )
     
     -- rysuj układy ze zmienionym kolorem czcionki
     if self._fore then

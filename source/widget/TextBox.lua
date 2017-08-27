@@ -67,7 +67,7 @@ function TextBox:draw( cr )
     end
     
     -- część wizualna
-    self:draw_visual( cr )
+    self:DrawVisual( cr )
     
     -- kursor blokowy (rysowanie pod tekstem)
     if self._draw_cursor and self._cursor_type == TextBox.cursor_type.Block then
@@ -87,7 +87,7 @@ function TextBox:draw( cr )
     end
 
     -- rysowanie tekstu
-    self:draw_text( cr )
+    self:DrawText( cr )
     
     -- kursor liniowy i podkreślenie
     if self._draw_cursor and self._cursor_type ~= TextBox.cursor_type.Block then
@@ -147,7 +147,7 @@ function TextBox:fit( width, height )
         height = height - marh
     end
     
-    local tw, th = self:calc_text( width, height )
+    local tw, th = self:CalcTextDims( width, height )
 
     -- zerowe wymiary
     if (not self._drawnil and tw == 0) or th == 0 then
@@ -536,7 +536,7 @@ local function new( args )
     table.insert( groups, "text" )
     
     -- inicjalizacja grup
-    Visual.initialize( retval, groups, args )
+    Visual.Initialize( retval, groups, args )
 
     -- przypisz funkcje do obiektu
     Useful.rewrite_functions( TextBox, retval )
