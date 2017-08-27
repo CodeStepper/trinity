@@ -71,41 +71,41 @@ local Label  = {}
 -- =================================================================================================
 
 local function new( args )
-    local args = args or {}
+	local args = args or {}
 
-    -- no niestety, coś trzeba podać w polu tekst lub markup
-    args.text = args.text or "example"
+	-- no niestety, coś trzeba podać w polu tekst lub markup
+	args.text = args.text or "example"
 
-    -- utwórz podstawę pola tekstowego
-    local retval = {}
+	-- utwórz podstawę pola tekstowego
+	local retval = {}
 
-    -- inicjalizacja sygnałów
-    Signal.initialize( retval )
+	-- inicjalizacja sygnałów
+	Signal.initialize( retval )
 
-    -- informacje o kontrolce
-    retval._control = "Label"
-    retval._type    = "widget"
+	-- informacje o kontrolce
+	retval._control = "Label"
+	retval._type    = "widget"
 
-    -- przypisz funkcję do obiektu
-    Useful.rewrite_functions( Label, retval )
-    
-    -- pobierz grupy i dodaj grupę tekstu
-    local groups = args.groups or {}
-    table.insert( groups, "text" )
-    
-    -- inicjalizacja grup i funkcji
-    Visual.Initialize( retval, groups, args )
-    
-    -- ustaw dodatkowe zmienne
-    retval:show_empty( args.show_empty or false, false )
-    
-    -- uruchamianie zadania dla kontrolki
-    if args.worker ~= nil then
-        retval.worker = {}
-        args.worker( retval, args )
-    end
+	-- przypisz funkcję do obiektu
+	Useful.RewriteFunctions( Label, retval )
+	
+	-- pobierz grupy i dodaj grupę tekstu
+	local groups = args.groups or {}
+	table.insert( groups, "text" )
+	
+	-- inicjalizacja grup i funkcji
+	Visual.Initialize( retval, groups, args )
+	
+	-- ustaw dodatkowe zmienne
+	retval:show_empty( args.show_empty or false, false )
+	
+	-- uruchamianie zadania dla kontrolki
+	if args.worker ~= nil then
+		retval.worker = {}
+		args.worker( retval, args )
+	end
 
-    return retval
+	return retval
 end
 
 -- =================================================================================================
@@ -115,14 +115,14 @@ end
 -- =================================================================================================
 
 function Label:draw( cr )
-    -- nie rysuj gdy wymiary są zerowe...
-    if self._bounds[5] == 0 or self._bounds[6] == 0 then
-        return
-    end
+	-- nie rysuj gdy wymiary są zerowe...
+	if self._bounds[5] == 0 or self._bounds[6] == 0 then
+		return
+	end
 
-    -- rysuj kontrolkę i tekst
-    self:DrawVisual( cr )
-    self:DrawText( cr )
+	-- rysuj kontrolkę i tekst
+	self:DrawVisual( cr )
+	self:DrawText( cr )
 
 end
 
@@ -136,37 +136,37 @@ end
 -- =================================================================================================
 
 function Label:fit( width, height )
-    local new_width  = width
-    local new_height = height
+	local new_width  = width
+	local new_height = height
 
-    -- obszar do pominięcia (margines wewnętrzny kontrolki)
-    local marw = self._padding[1] + self._padding[3]
-    local marh = self._padding[2] + self._padding[4]
-    
-    -- zerowe wymiary (lub jeden z nich) - lub gdy kontrolka się nie zmieści
-    if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
-        return 0, 0
-    end
-    
-    -- odejmij wcięcia
-    new_width  = width  > 0 and width  - marw or width
-    new_height = height > 0 and height - marh or height
-    
-    -- wymiary tekstu
-    local tw, th = self:CalcTextDims( new_width, new_height )
+	-- obszar do pominięcia (margines wewnętrzny kontrolki)
+	local marw = self._padding[1] + self._padding[3]
+	local marh = self._padding[2] + self._padding[4]
+	
+	-- zerowe wymiary (lub jeden z nich) - lub gdy kontrolka się nie zmieści
+	if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
+		return 0, 0
+	end
+	
+	-- odejmij wcięcia
+	new_width  = width  > 0 and width  - marw or width
+	new_height = height > 0 and height - marh or height
+	
+	-- wymiary tekstu
+	local tw, th = self:CalcTextDims( new_width, new_height )
 
-    -- zerowe wymiary
-    if (not self._drawnil and tw == 0) or th == 0 then
-        return 0, 0
-    end
-    
-    if self.CalcImageScale then
-        self:CalcImageScale( width, height )
-        -- self:CalcImageScale( tw + marw, th + marh )
-    end
+	-- zerowe wymiary
+	if (not self._drawnil and tw == 0) or th == 0 then
+		return 0, 0
+	end
+	
+	if self.CalcImageScale then
+		self:CalcImageScale( width, height )
+		-- self:CalcImageScale( tw + marw, th + marh )
+	end
 
-    -- dodaj wcięcia
-    return tw + marw, th + marh
+	-- dodaj wcięcia
+	return tw + marw, th + marh
 end
 
 -- =================================================================================================
@@ -179,15 +179,15 @@ end
 -- =================================================================================================
 
 function Label:show_empty( value, update )
-    self._drawnil = value
+	self._drawnil = value
 
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        self:emit_signal( "widget::resized" )
-        self:emit_signal( "widget::updated" )
-    end
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -197,7 +197,7 @@ end
 Label.mt = {}
 
 function Label.mt:__call(...)
-    return new(...)
+	return new(...)
 end
 
 return setmetatable( Label, Label.mt )

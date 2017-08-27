@@ -65,55 +65,55 @@ local Flex   = {}
 -- =================================================================================================
 
 local function new( args )
-    local args = args or {}
-    
-    -- utwórz podstawę elementu
-    local retval = {}
+	local args = args or {}
+	
+	-- utwórz podstawę elementu
+	local retval = {}
 
-    -- typ szablonu
-    retval._type    = "layout"
-    retval._control = "Flex"
-    
-    -- inicjalizacja sygnałów
-    if args.emiter then
-        Signal.initialize( retval, args.emiter )
-    else
-        Signal.initialize( retval )
-    end
-    
-    -- dodawanie funkcji do obiektu
-    Useful.rewrite_functions( Flex, retval )
+	-- typ szablonu
+	retval._type    = "layout"
+	retval._control = "Flex"
+	
+	-- inicjalizacja sygnałów
+	if args.emiter then
+		Signal.initialize( retval, args.emiter )
+	else
+		Signal.initialize( retval )
+	end
+	
+	-- dodawanie funkcji do obiektu
+	Useful.RewriteFunctions( Flex, retval )
 
-    local groups = args.groups or {}
-    
-    -- nie pozwalaj na dodanie funkcji dla tekstu
-    for key, val in pairs(groups) do
-        if val == "text" then
-            groups[key] = nil
-        end
-    end
+	local groups = args.groups or {}
+	
+	-- nie pozwalaj na dodanie funkcji dla tekstu
+	for key, val in pairs(groups) do
+		if val == "text" then
+			groups[key] = nil
+		end
+	end
 
-    -- inicjalizacja strefy odpowiedzialnej za wygląd
-    Visual.Initialize( retval, groups, args )
-    
-    -- kierunek umieszczania elementów
-    retval._widgets = {}
+	-- inicjalizacja strefy odpowiedzialnej za wygląd
+	Visual.Initialize( retval, groups, args )
+	
+	-- kierunek umieszczania elementów
+	retval._widgets = {}
 
-    -- aktualizacja elementu
-    retval.emit_updated = function()
-        retval:emit_signal( "widget::updated" )
-    end
-    -- odświeżenie wymiarów
-    retval.emit_resized = function()
-        retval:emit_signal( "widget::resized" )
-    end
+	-- aktualizacja elementu
+	retval.emit_updated = function()
+		retval:emit_signal( "widget::updated" )
+	end
+	-- odświeżenie wymiarów
+	retval.emit_resized = function()
+		retval:emit_signal( "widget::resized" )
+	end
 
-    -- przypisz zmienne
-    retval:set_direction( args.direction or "x" )
-    retval:set_element_space( args.elem_space or 0 )
-    
-    -- zwróć obiekt
-    return retval
+	-- przypisz zmienne
+	retval:set_direction( args.direction or "x" )
+	retval:set_element_space( args.elem_space or 0 )
+	
+	-- zwróć obiekt
+	return retval
 end
 
 -- =================================================================================================
@@ -123,26 +123,26 @@ end
 -- =================================================================================================
 
 function Flex:draw( cr )
-    -- część wizualna
-    self:DrawVisual( cr )
-    
-    -- rysuj elementy ze zmienionym kolorem czcionki
-    if self._fore then
-        cr:save()
-        cr:set_source( self._fore )
-        
-        for key, val in pairs(self._widgets) do
-            val:draw( cr )
-        end
-        
-        cr:restore()
-        
-    -- rysuj element z domyślnym kolorem czcionki
-    else
-        for key, val in pairs(self._widgets) do
-            val:draw( cr )
-        end
-    end
+	-- część wizualna
+	self:DrawVisual( cr )
+	
+	-- rysuj elementy ze zmienionym kolorem czcionki
+	if self._fore then
+		cr:save()
+		cr:set_source( self._fore )
+		
+		for key, val in pairs(self._widgets) do
+			val:draw( cr )
+		end
+		
+		cr:restore()
+		
+	-- rysuj element z domyślnym kolorem czcionki
+	else
+		for key, val in pairs(self._widgets) do
+			val:draw( cr )
+		end
+	end
 end
 
 -- =================================================================================================
@@ -159,58 +159,58 @@ end
 -- =================================================================================================
 
 function Flex:fit( width, height )
-    local new_width, new_height = -1, -1
-    local temp   = self._padding
-    local px, py = temp[1], temp[2]
-    local bounds = self._bounds
+	local new_width, new_height = -1, -1
+	local temp   = self._padding
+	local px, py = temp[1], temp[2]
+	local bounds = self._bounds
 
-    -- rozmieszczenie poziome
-    if self._direction == "x" then
-        local part_width = 0
+	-- rozmieszczenie poziome
+	if self._direction == "x" then
+		local part_width = 0
 
-        -- szerokość i wysokość
-        new_height = height - temp[2] - temp[4]
-        new_width  = width  - temp[1] - temp[3] - self._space * (#self._widgets - 1)
-        
-        if #self._widgets then
-            part_width = new_width / #self._widgets
-            part_width = part_width + 0.5 - (part_width + 0.5) % 1
-        end
+		-- szerokość i wysokość
+		new_height = height - temp[2] - temp[4]
+		new_width  = width  - temp[1] - temp[3] - self._space * (#self._widgets - 1)
+		
+		if #self._widgets then
+			part_width = new_width / #self._widgets
+			part_width = part_width + 0.5 - (part_width + 0.5) % 1
+		end
 
-        -- oblicz rozmiary elementów podłączonych
-        for key, val in pairs(self._widgets) do
-            local w, h = val:fit( part_width, new_height )
-            
-            -- ustaw granice przechwytywania zdarzeń
-            val:emit_bounds( bounds[1] + px, bounds[2] + py, part_width, new_height )
-            
-            px = px + part_width + self._space
-        end
-    -- rozmieszczenie pionowe
-    else
-        local part_height = 0
+		-- oblicz rozmiary elementów podłączonych
+		for key, val in pairs(self._widgets) do
+			local w, h = val:fit( part_width, new_height )
+			
+			-- ustaw granice przechwytywania zdarzeń
+			val:emit_bounds( bounds[1] + px, bounds[2] + py, part_width, new_height )
+			
+			px = px + part_width + self._space
+		end
+	-- rozmieszczenie pionowe
+	else
+		local part_height = 0
 
-        -- kontrolowana szerokość
-        new_width  = width  - temp[1] - temp[3]
-        new_height = height - temp[2] - temp[4] - self._space * (#self._widgets - 1)
-        
-        if #self._widgets then
-            part_height = new_height / #self._widgets
-        end
+		-- kontrolowana szerokość
+		new_width  = width  - temp[1] - temp[3]
+		new_height = height - temp[2] - temp[4] - self._space * (#self._widgets - 1)
+		
+		if #self._widgets then
+			part_height = new_height / #self._widgets
+		end
 
-        -- oblicz rozmiary elementów podłączonych
-        for key, val in pairs(self._widgets) do
-            -- sprawdź wymiary elementu
-            local w, h = val:fit( new_width, part_height )
-            
-            -- ustaw granice przechwytywania zdarzeń
-            val:emit_bounds( bounds[1] + px, bounds[2] + py, new_width, part_height )
-            
-            py = py + part_height + self._space
-        end
-    end
+		-- oblicz rozmiary elementów podłączonych
+		for key, val in pairs(self._widgets) do
+			-- sprawdź wymiary elementu
+			local w, h = val:fit( new_width, part_height )
+			
+			-- ustaw granice przechwytywania zdarzeń
+			val:emit_bounds( bounds[1] + px, bounds[2] + py, new_width, part_height )
+			
+			py = py + part_height + self._space
+		end
+	end
 
-    return width, height
+	return width, height
 end
 
 -- =================================================================================================
@@ -223,19 +223,19 @@ end
 -- =================================================================================================
 
 function Flex:add( widget, emiter )
-    table.insert( self._widgets, widget )    
-    
-    widget:connect_signal( "widget::updated", self.emit_updated )
-    widget:connect_signal( "widget::resized", self.emit_resized )
+	table.insert( self._widgets, widget )    
+	
+	widget:connect_signal( "widget::updated", self.emit_updated )
+	widget:connect_signal( "widget::resized", self.emit_resized )
 
-    if emiter then
-        widget:signal_emiter( self )
-    end
+	if emiter then
+		widget:signal_emiter( self )
+	end
 
-    self:emit_signal( "widget::resized" )
-    self:emit_signal( "widget::updated" )
+	self:emit_signal( "widget::resized" )
+	self:emit_signal( "widget::updated" )
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -245,15 +245,15 @@ end
 -- =================================================================================================
 
 function Flex:reset()
-    for key, val in pairs(self._widgets) do
-        val:disconnect_signal( "widget::updated", self.emit_updated )
-        val:disconnect_signal( "widget::resized", self.emit_resized )
-    end
-    
-    self._widgets = {}
-    
-    self:emit_signal( "widget::resized" )
-    self:emit_signal( "widget::updated" )
+	for key, val in pairs(self._widgets) do
+		val:disconnect_signal( "widget::updated", self.emit_updated )
+		val:disconnect_signal( "widget::resized", self.emit_resized )
+	end
+	
+	self._widgets = {}
+	
+	self:emit_signal( "widget::resized" )
+	self:emit_signal( "widget::updated" )
 end
 
 -- =================================================================================================
@@ -266,16 +266,16 @@ end
 -- =================================================================================================
 
 function Flex:set_element_space( space, emitup )
-    self._space = space
-    
-    if emitup == false then
-        return self
-    end
-    
-    self:emit_signal( "widget::resized" )
-    self:emit_signal( "widget::updated" )
+	self._space = space
+	
+	if emitup == false then
+		return self
+	end
+	
+	self:emit_signal( "widget::resized" )
+	self:emit_signal( "widget::updated" )
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -288,17 +288,17 @@ end
 -- =================================================================================================
 
 function Flex:set_direction( value, emitup )
-    self._direction = value == "y" and "y" or "x"
+	self._direction = value == "y" and "y" or "x"
 
-    if emitup == false then
-        return self
-    end
+	if emitup == false then
+		return self
+	end
  
-    -- wyślij sygnał aktualizacji elementu
-    self:emit_signal( "widget::resized" )
-    self:emit_signal( "widget::updated" )
+	-- wyślij sygnał aktualizacji elementu
+	self:emit_signal( "widget::resized" )
+	self:emit_signal( "widget::updated" )
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -308,7 +308,7 @@ end
 Flex.mt = {}
 
 function Flex.mt:__call(...)
-    return new(...)
+	return new(...)
 end
 
 return setmetatable( Flex, Flex.mt )

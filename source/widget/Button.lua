@@ -71,195 +71,195 @@ local Button  = {}
 -- =================================================================================================
 
 local function new( args )
-    args = args or {}
+	args = args or {}
 
-    local retval = {}
+	local retval = {}
 
-    Signal.initialize( retval )
+	Signal.initialize( retval )
 
-    retval._control = "Button"
-    retval._type    = "composite"
+	retval._control = "Button"
+	retval._type    = "composite"
 
-    Useful.rewrite_functions( Button, retval )
+	Useful.rewrite_functions( Button, retval )
 
-    -- pobierz grupy
-    local groups = args.groups or {}
-    
-    -- nie pozwalaj na dodanie określonych grup
-    for key, val in pairs(groups) do
-        if val == "text" or val == "fore" then
-            groups[key] = nil
-        end
-    end
-    
-    Visual.initialize( retval )
+	-- pobierz grupy
+	local groups = args.groups or {}
+	
+	-- nie pozwalaj na dodanie określonych grup
+	for key, val in pairs(groups) do
+		if val == "text" then
+			groups[key] = nil
+		end
+	end
 
-    -- utwórz widget (poziomy szablon dla przycisku)
-    local retval = wibox.widget.base.make_widget()
-    local imgpos = args.image_pos or "left"
-    local margin = args.margin
-    
-    -- margines
-    if type(margin) ~= "table" or #margin ~= 5 then
-        margin = { 0, 0, 0, 0, 0 }
-    end
-    retval.margin = margin
-    
-    -- tabela widżetów
-    retval.widgets = {}
-    retval._emit_updated = function()
-        retval:emit_signal("widget::updated")
-    end
-    
-    -- dodawanie funkcji do obiektu
-    for key, val in pairs(button) do
-        if type(val) == "function" then
-            retval[key] = val
-        end
-    end
+	Visual.initialize( retval )
 
-    -- kolor tła
-    if type(args.background) == "string" then
-        local r,g,b,a = gears.color.parse_color( args.background )
-        retval.back = { r, g, b, a }
-    end
-    -- kolor tła
-    if type(args.foreground) == "string" then
-        local r,g,b,a = gears.color.parse_color( args.foreground )
-        retval.fore = { r, g, b, a }
-    end
-    
-    -- @SIGNALS {{ 
-    -- naciśnięcie przycisku
-    if type(args.press) == "function" then
-        retval:connect_signal( "button::press", args.press )
-    end
-    -- puszczenie przycisku
-    if type(args.release) == "function" then
-        retval:connect_signal( "button::release", args.release )
-    end
-    -- wejście myszy na przycisk
-    if type(args.enter) == "function" then
-        retval:connect_signal( "mouse::enter", args.enter )
-    end
-    -- wyjście myszy z przycisku
-    if type(args.leave) == "function" then
-        retval:connect_signal( "mouse::leave", args.leave )
-    end
-    -- }} #SIGNALS
-    
-    -- utwórz tekst dla przycisku
-    if args.text ~= nil or args.markup ~= nil then
-        retval.textbox = wibox.widget.textbox()
-        
-        -- ustaw tekst
-        if type(args.text) == "string" or type(args.markup) == "string" then
-            if type(args.text) == "string" then
-                retval.textbox:set_text(args.text)
-            else
-                retval.textbox:set_markup(args.markup)
-            end
-        end
-    end
-    
-    -- utwórz obrazek dla przycisku
-    if args.image ~= nil then
-        retval.imagebox = wibox.widget.imagebox()
-        
-        -- ustaw obrazek
-        if args.image ~= true then
-            retval.imagebox:set_image( args.image )
-        end
-    else
-        imgpos = "none"
-    end
-    
-    -- dodaj obrazek po lewej stronie
-    if retval.imagebox ~= nil and imgpos == "left" then
-        retval:add( retval.imagebox )
-        retval.imagebox.margin = {
-            margin[1],
-            margin[2],
-            margin[5],
-            margin[4]
-        }
-    end
-    
-    -- dodaj tekst
-    if retval.textbox ~= nil then
-        retval:add( retval.textbox )
-        retval.textbox.margin = {
-            (imgpos == "left" and 0 or margin[1]),
-            margin[2],
-            (imgpos == "right" and 0 or margin[3]),
-            margin[4]
-        }
-        
-    retval.textbox:connect_signal( "mouse::enter", function()
-        local naughty = require("naughty")
-        naughty.notify({ preset = naughty.config.presets.critical,
-                         title = "Oops, an error happened!",
-                         text = err })
-    end )
-    end
-    
-    -- dodaj obrazek po prawej stronie
-    if retval.imagebox ~= nil and imgpos == "right" then
-        retval:add( retval.imagebox )
-        retval.imagebox.margin = {
-            margin[5],
-            margin[2],
-            margin[3],
-            margin[4]
-        }
-    end
-    
-    -- uruchamianie dodatkowej funkcji dla zadania
-    if args.worker ~= nil then
-        retval.worker = {}
-        args.worker( retval, args )
-    end
-    
-    return retval
+	-- utwórz widget (poziomy szablon dla przycisku)
+	local retval = wibox.widget.base.make_widget()
+	local imgpos = args.image_pos or "left"
+	local margin = args.margin
+	
+	-- margines
+	if type(margin) ~= "table" or #margin ~= 5 then
+		margin = { 0, 0, 0, 0, 0 }
+	end
+	retval.margin = margin
+	
+	-- tabela widżetów
+	retval.widgets = {}
+	retval._emit_updated = function()
+		retval:emit_signal("widget::updated")
+	end
+	
+	-- dodawanie funkcji do obiektu
+	for key, val in pairs(button) do
+		if type(val) == "function" then
+			retval[key] = val
+		end
+	end
+
+	-- kolor tła
+	if type(args.background) == "string" then
+		local r,g,b,a = gears.color.parse_color( args.background )
+		retval.back = { r, g, b, a }
+	end
+	-- kolor tła
+	if type(args.foreground) == "string" then
+		local r,g,b,a = gears.color.parse_color( args.foreground )
+		retval.fore = { r, g, b, a }
+	end
+	
+	-- @SIGNALS {{ 
+	-- naciśnięcie przycisku
+	if type(args.press) == "function" then
+		retval:connect_signal( "button::press", args.press )
+	end
+	-- puszczenie przycisku
+	if type(args.release) == "function" then
+		retval:connect_signal( "button::release", args.release )
+	end
+	-- wejście myszy na przycisk
+	if type(args.enter) == "function" then
+		retval:connect_signal( "mouse::enter", args.enter )
+	end
+	-- wyjście myszy z przycisku
+	if type(args.leave) == "function" then
+		retval:connect_signal( "mouse::leave", args.leave )
+	end
+	-- }} #SIGNALS
+	
+	-- utwórz tekst dla przycisku
+	if args.text ~= nil or args.markup ~= nil then
+		retval.textbox = wibox.widget.textbox()
+		
+		-- ustaw tekst
+		if type(args.text) == "string" or type(args.markup) == "string" then
+			if type(args.text) == "string" then
+				retval.textbox:set_text(args.text)
+			else
+				retval.textbox:set_markup(args.markup)
+			end
+		end
+	end
+	
+	-- utwórz obrazek dla przycisku
+	if args.image ~= nil then
+		retval.imagebox = wibox.widget.imagebox()
+		
+		-- ustaw obrazek
+		if args.image ~= true then
+			retval.imagebox:set_image( args.image )
+		end
+	else
+		imgpos = "none"
+	end
+	
+	-- dodaj obrazek po lewej stronie
+	if retval.imagebox ~= nil and imgpos == "left" then
+		retval:add( retval.imagebox )
+		retval.imagebox.margin = {
+			margin[1],
+			margin[2],
+			margin[5],
+			margin[4]
+		}
+	end
+	
+	-- dodaj tekst
+	if retval.textbox ~= nil then
+		retval:add( retval.textbox )
+		retval.textbox.margin = {
+			(imgpos == "left" and 0 or margin[1]),
+			margin[2],
+			(imgpos == "right" and 0 or margin[3]),
+			margin[4]
+		}
+		
+	retval.textbox:connect_signal( "mouse::enter", function()
+		local naughty = require("naughty")
+		naughty.notify({ preset = naughty.config.presets.critical,
+						 title = "Oops, an error happened!",
+						 text = err })
+	end )
+	end
+	
+	-- dodaj obrazek po prawej stronie
+	if retval.imagebox ~= nil and imgpos == "right" then
+		retval:add( retval.imagebox )
+		retval.imagebox.margin = {
+			margin[5],
+			margin[2],
+			margin[3],
+			margin[4]
+		}
+	end
+	
+	-- uruchamianie dodatkowej funkcji dla zadania
+	if args.worker ~= nil then
+		retval.worker = {}
+		args.worker( retval, args )
+	end
+	
+	return retval
 
 
 
-    local args = args or {}
+	local args = args or {}
 
-    -- utwórz podstawę elementu
-    local retval = {}
-    
-    -- inicjalizacja sygnałów
-    Signal.initialize( retval )
+	-- utwórz podstawę elementu
+	local retval = {}
+	
+	-- inicjalizacja sygnałów
+	Signal.initialize( retval )
 
-    -- informacje o kontrolce
-    retval._control = "Image"
-    retval._type    = "widget"
+	-- informacje o kontrolce
+	retval._control = "Image"
+	retval._type    = "widget"
 
-    -- przypisz funkcje do obiektu
-    Useful.rewrite_functions( Image, retval )
-    
-    -- pobierz grupy
-    local groups = args.groups or {}
-    
-    -- nie pozwalaj na dodanie określonych grup
-    for key, val in pairs(groups) do
-        if val == "text" or val == "fore" then
-            groups[key] = nil
-        end
-    end
-    
-    -- inicjalizacja grup i funkcji
-    Visual.initialize( retval, groups, args )
-    
-    -- ustaw dodatkowe zmienne
-    retval:show_empty( args.show_empty or false, false )
-    retval:set_image( args.image, false )
-    retval:set_stretch( args.stretch or false, false )
-    retval:keep_aspect( args.keep_aspect or false, false )
-    retval:set_align( args.vertical_align, args.horizontal_align, false )
-    
-    return retval
+	-- przypisz funkcje do obiektu
+	Useful.rewrite_functions( Image, retval )
+	
+	-- pobierz grupy
+	local groups = args.groups or {}
+	
+	-- nie pozwalaj na dodanie określonych grup
+	for key, val in pairs(groups) do
+		if val == "text" or val == "fore" then
+			groups[key] = nil
+		end
+	end
+	
+	-- inicjalizacja grup i funkcji
+	Visual.initialize( retval, groups, args )
+	
+	-- ustaw dodatkowe zmienne
+	retval:show_empty( args.show_empty or false, false )
+	retval:set_image( args.image, false )
+	retval:set_stretch( args.stretch or false, false )
+	retval:keep_aspect( args.keep_aspect or false, false )
+	retval:set_align( args.vertical_align, args.horizontal_align, false )
+	
+	return retval
 end
 
 -- =================================================================================================
@@ -270,49 +270,49 @@ end
 -- =================================================================================================
 
 function Image:draw( cr )
-    -- nie rysuj gdy wymiary są zerowe...
-    if self._bounds[5] == 0 or self._bounds[6] == 0 then
-        return
-    end
+	-- nie rysuj gdy wymiary są zerowe...
+	if self._bounds[5] == 0 or self._bounds[6] == 0 then
+		return
+	end
 
-    -- część wizualna
-    self:draw_visual( cr )
-    
-    -- rysuj obrazek
-    cr:save()
-    
-    -- pobierz obszar rysowania i wymiary obrazka
-    local x, y, w, h = self:get_inner_bounds()
-    local ofx, ofy = 0, 0
-    
-    -- obrazek nie pasuje do obszaru
-    if w ~= self._image_dim[1] or h ~= self._image_dim[2] then
-        -- powiększanie obrazka
-        if self._stretch then
-            cr:scale( self._scale_dim[1], self._scale_dim[2] )
-        end
-        -- przyleganie w poziomie
-        if self._halign ~= Visual.HALIGNINT.Left then
-            ofx = w - (self._scale_dim[1] * self._image_dim[1])
-            if self._halign == Visual.HALIGNINT.Center then
-                ofx = ofx / 2
-            end
-        end
-        -- przyleganie w pionie
-        if self._valign ~= Visual.VALIGNINT.Top then
-            ofy = h - (self._scale_dim[2] * self._image_dim[2])
-            
-            if self._valign == Visual.VALIGNINT.Center then
-                ofy = ofy / 2
-            end
-        end
-    end
-    
-    -- rysuj obrazek
-    cr:set_source_surface( self._image, (x + ofx) / self._scale_dim[1], (y + ofy) / self._scale_dim[2] )
-    cr:paint()
-    
-    cr:restore()
+	-- część wizualna
+	self:draw_visual( cr )
+	
+	-- rysuj obrazek
+	cr:save()
+	
+	-- pobierz obszar rysowania i wymiary obrazka
+	local x, y, w, h = self:get_inner_bounds()
+	local ofx, ofy = 0, 0
+	
+	-- obrazek nie pasuje do obszaru
+	if w ~= self._image_dim[1] or h ~= self._image_dim[2] then
+		-- powiększanie obrazka
+		if self._stretch then
+			cr:scale( self._scale_dim[1], self._scale_dim[2] )
+		end
+		-- przyleganie w poziomie
+		if self._halign ~= Visual.HALIGNINT.Left then
+			ofx = w - (self._scale_dim[1] * self._image_dim[1])
+			if self._halign == Visual.HALIGNINT.Center then
+				ofx = ofx / 2
+			end
+		end
+		-- przyleganie w pionie
+		if self._valign ~= Visual.VALIGNINT.Top then
+			ofy = h - (self._scale_dim[2] * self._image_dim[2])
+			
+			if self._valign == Visual.VALIGNINT.Center then
+				ofy = ofy / 2
+			end
+		end
+	end
+	
+	-- rysuj obrazek
+	cr:set_source_surface( self._image, (x + ofx) / self._scale_dim[1], (y + ofy) / self._scale_dim[2] )
+	cr:paint()
+	
+	cr:restore()
 end
 
 -- =================================================================================================
@@ -326,67 +326,67 @@ end
 -- =================================================================================================
 
 function Image:fit( width, height )
-    local new_width  = width
-    local new_height = height
+	local new_width  = width
+	local new_height = height
 
-    -- obszar do pominięcia (wcięcie)
-    local marw = self._padding[1] + self._padding[3]
-    local marh = self._padding[2] + self._padding[4]
-    
-    -- przypisz wymiary obrazka
-    self._scale_dim[1] = 1.0
-    self._scale_dim[2] = 1.0
+	-- obszar do pominięcia (wcięcie)
+	local marw = self._padding[1] + self._padding[3]
+	local marh = self._padding[2] + self._padding[4]
+	
+	-- przypisz wymiary obrazka
+	self._scale_dim[1] = 1.0
+	self._scale_dim[2] = 1.0
 
-    -- nie licz jeżeli wymiary są mniejsze niż wcięcie
-    if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
-        return 0, 0
-    end
+	-- nie licz jeżeli wymiary są mniejsze niż wcięcie
+	if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
+		return 0, 0
+	end
 
-    -- pobierz wymiary obrazka gdy funkcja o to prosi
-    if width == -1 or height == -1 then
-        if width == -1 then
-            new_width = self._image_dim[1] + marw
-        end
-        if height == -1 then
-            new_height = self._image_dim[2] + marh
-        end
-    end
+	-- pobierz wymiary obrazka gdy funkcja o to prosi
+	if width == -1 or height == -1 then
+		if width == -1 then
+			new_width = self._image_dim[1] + marw
+		end
+		if height == -1 then
+			new_height = self._image_dim[2] + marh
+		end
+	end
 
-    -- rozciągnij gdy to potrzebne i sprawdź czy obrazek ma być rozciągany w stosunku 1:1
-    if self._stretch then
-        -- dopasuj szerokość
-        if width == -1 and height > 0 then
-            self._scale_dim[2] = (new_height - marh) / self._image_dim[2]
-            self._scale_dim[1] = self._aspect and self._scale_dim[2] or 1.0
+	-- rozciągnij gdy to potrzebne i sprawdź czy obrazek ma być rozciągany w stosunku 1:1
+	if self._stretch then
+		-- dopasuj szerokość
+		if width == -1 and height > 0 then
+			self._scale_dim[2] = (new_height - marh) / self._image_dim[2]
+			self._scale_dim[1] = self._aspect and self._scale_dim[2] or 1.0
 
-            new_width  = self._scale_dim[1] * self._image_dim[1] + marw
-        -- dopasuj wysokość
-        elseif height == -1 and width > 0 then
-            self._scale_dim[1] = (new_width - marw) / self._image_dim[1] 
-            self._scale_dim[2] = self._aspect and self._scale_dim[1] or 1.0
+			new_width  = self._scale_dim[1] * self._image_dim[1] + marw
+		-- dopasuj wysokość
+		elseif height == -1 and width > 0 then
+			self._scale_dim[1] = (new_width - marw) / self._image_dim[1] 
+			self._scale_dim[2] = self._aspect and self._scale_dim[1] or 1.0
 
-            new_height = self._scale_dim[2] * self._image_dim[2] + marh
-        -- dopasuj cokolwiek
-        elseif width > 0 and height > 0 then
-            local calc_width  = (width  - marw) / self._image_dim[1]
-            local calc_height = (height - marh) / self._image_dim[2]
+			new_height = self._scale_dim[2] * self._image_dim[2] + marh
+		-- dopasuj cokolwiek
+		elseif width > 0 and height > 0 then
+			local calc_width  = (width  - marw) / self._image_dim[1]
+			local calc_height = (height - marh) / self._image_dim[2]
 
-            if self._aspect then
-                self._scale_dim[1] = calc_width > calc_height and calc_height or calc_width
-                self._scale_dim[2] = self._scale_dim[1]
-            else
-                self._scale_dim[1] = calc_width
-                self._scale_dim[2] = calc_height
-            end
-        end
-    end
+			if self._aspect then
+				self._scale_dim[1] = calc_width > calc_height and calc_height or calc_width
+				self._scale_dim[2] = self._scale_dim[1]
+			else
+				self._scale_dim[1] = calc_width
+				self._scale_dim[2] = calc_height
+			end
+		end
+	end
 
-    -- zero (tylko gdy 0 wyjdzie przy -1)...
-    if not self._drawnil and (new_width == 0 or new_height == 0) then
-        return 0, 0
-    end
-    
-    return new_width, new_height
+	-- zero (tylko gdy 0 wyjdzie przy -1)...
+	if not self._drawnil and (new_width == 0 or new_height == 0) then
+		return 0, 0
+	end
+	
+	return new_width, new_height
 end
 
 -- =================================================================================================
@@ -399,15 +399,15 @@ end
 -- =================================================================================================
 
 function Image:show_empty( value, update )
-    self._drawnil = value
-    
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        self:emit_signal( "widget::resized" )
-        self:emit_signal( "widget::updated" )
-    end
+	self._drawnil = value
+	
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -420,15 +420,15 @@ end
 -- =================================================================================================
 
 function Image:keep_aspect( value, update )
-    self._aspect = value
-    
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        self:emit_signal( "widget::resized" )
-        self:emit_signal( "widget::updated" )
-    end
+	self._aspect = value
+	
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -441,15 +441,15 @@ end
 -- =================================================================================================
 
 function Image:set_stretch( value, update )
-    self._stretch = value
-    
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        self:emit_signal( "widget::resized" )
-        self:emit_signal( "widget::updated" )
-    end
+	self._stretch = value
+	
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -462,42 +462,42 @@ end
 -- =================================================================================================
 
 function Image:set_image( img, update )
-    local img = img
+	local img = img
 
-    -- ściezka do obrazka - załaduj obrazek
-    if type(img) == "string" then
-        local success, result = pcall( Surface.load, img )
-        
-        if not success then
-            error( "Error while reading '" .. img .. "': " .. result )
-            return
-        end
-        img = result
-    end
-    -- załaduj obiekt "surface"
-    img = Surface.load( img )
+	-- ściezka do obrazka - załaduj obrazek
+	if type(img) == "string" then
+		local success, result = pcall( Surface.load, img )
+		
+		if not success then
+			error( "Error while reading '" .. img .. "': " .. result )
+			return
+		end
+		img = result
+	end
+	-- załaduj obiekt "surface"
+	img = Surface.load( img )
 
-    -- błąd podczas ładowania?
-    if img == nil then
-        self._image_dim = { 0, 0 }
-        self._scale_dim = { 0, 0 }
-        self._Image = nil
-        
-        return
-    end
+	-- błąd podczas ładowania?
+	if img == nil then
+		self._image_dim = { 0, 0 }
+		self._scale_dim = { 0, 0 }
+		self._Image = nil
+		
+		return
+	end
 
-    -- zapisz wymiary obrazka
-    self._image_dim = { img.width, img.height }
-    self._scale_dim = { img.width, img.height }
-    self._image     = img
+	-- zapisz wymiary obrazka
+	self._image_dim = { img.width, img.height }
+	self._scale_dim = { img.width, img.height }
+	self._image     = img
 
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        self:emit_signal( "widget::resized" )
-        self:emit_signal( "widget::updated" )
-    end
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -511,22 +511,22 @@ end
 -- =================================================================================================
 
 function Image:set_align( vert, horiz, update )
-    -- przyleganie poziome
-    if horiz ~= nil then
-        self._halign = Visual.HALIGNINT[horiz] or 2
-    end
-    -- przyleganie pionowe
-    if vert ~= nil then
-        self._valign = Visual.VALIGNINT[vert] or 2
-    end
+	-- przyleganie poziome
+	if horiz ~= nil then
+		self._halign = Visual.HALIGNINT[horiz] or 2
+	end
+	-- przyleganie pionowe
+	if vert ~= nil then
+		self._valign = Visual.VALIGNINT[vert] or 2
+	end
 
-    -- wyślij sygnał aktualizacji elementu
-    if update == nil or update then
-        -- do zmiany przylegania nie potrzeba odświeżania rozmiaru kontrolki
-        self:emit_signal( "widget::updated" )
-    end
+	-- wyślij sygnał aktualizacji elementu
+	if update == nil or update then
+		-- do zmiany przylegania nie potrzeba odświeżania rozmiaru kontrolki
+		self:emit_signal( "widget::updated" )
+	end
 
-    return self
+	return self
 end
 
 -- =================================================================================================
@@ -536,7 +536,7 @@ end
 Image.mt = {}
 
 function Image.mt:__call(...)
-    return new(...)
+	return new(...)
 end
 
 return setmetatable( Image, Image.mt )
