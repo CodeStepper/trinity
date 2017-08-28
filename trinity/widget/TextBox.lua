@@ -67,7 +67,7 @@ function TextBox:draw( cr )
 	end
 	
 	-- część wizualna
-	self:DrawVisual( cr )
+	self:draw_visual( cr )
 	
 	-- kursor blokowy (rysowanie pod tekstem)
 	if self._draw_cursor and self._cursor_type == TextBox.cursor_type.Block then
@@ -87,7 +87,7 @@ function TextBox:draw( cr )
 	end
 
 	-- rysowanie tekstu
-	self:DrawText( cr )
+	self:draw_text( cr )
 	
 	-- kursor liniowy i podkreślenie
 	if self._draw_cursor and self._cursor_type ~= TextBox.cursor_type.Block then
@@ -147,7 +147,7 @@ function TextBox:fit( width, height )
 		height = height - marh
 	end
 	
-	local tw, th = self:CalcTextDims( width, height )
+	local tw, th = self:calc_text_dims( width, height )
 
 	-- zerowe wymiary
 	if (not self._drawnil and tw == 0) or th == 0 then
@@ -536,14 +536,14 @@ local function new( args )
 	table.insert( groups, "text" )
 	
 	-- inicjalizacja grup
-	Visual.Initialize( retval, groups, args )
+	Visual.initialize( retval, groups, args )
 
 	-- przypisz funkcje do obiektu
-	Useful.RewriteFunctions( TextBox, retval )
+	Useful.rewrite_functions( TextBox, retval )
 	
 	-- lista czcionek
 	if TextBox.monospace_fonts == nil then
-		TextBox.monospace_fonts = Useful.MonospaceFontList( retval._cairo_layout )
+		TextBox.monospace_fonts = Useful.monospace_font_list( retval._cairo_layout )
 	end
 	
 	-- ustaw dodatkowe zmienne
@@ -559,7 +559,7 @@ local function new( args )
 			args.blink_speed = 0.7
 		end
 		
-		retval._timer = Useful.Timer( args.blink_speed, "TextBox" )
+		retval._timer = Useful.timer( args.blink_speed, "TextBox" )
 		retval._timer:connect_signal( "timeout", update_blinker )
 	end
 

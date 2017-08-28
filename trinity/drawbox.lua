@@ -106,7 +106,7 @@ function drawbox:set_widget( widget )
 	end
 	
 	-- przypisz emiter do wstawianego elementu
-	widget:signal_emiter( self )
+	widget:signal_emitter( self )
 	
 	-- przerysuj pojemnik (aby pokazał się nowo dodany element)
 	self.draw()
@@ -174,8 +174,6 @@ end
 
 function setup_signals( object )
 	function capture_event( from, signal )
-		object:add_signal( signal )
-	
 		from:connect_signal( signal, function(_, ...)
 			object:emit_signal( signal, ... )
 		end )
@@ -254,7 +252,7 @@ local function new( args )
 	
 	-- inicjalizacja przechwytywania zdarzeń i tworzenie emitera (menedżera zdarzeń)
 	signal.initialize( retval, true )
-	useful.RewriteFunctions( drawbox, retval )
+	useful.rewrite_functions( drawbox, retval )
 
 	-- dodatkowe funkcje z obiektu _drawin
 	local fcts = { "buttons", "struts", "get_xproperty", "set_xproperty" }

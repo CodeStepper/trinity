@@ -84,14 +84,14 @@ local function new( args )
 	retval._type    = "widget"
 
 	-- przypisz funkcję do obiektu
-	Useful.RewriteFunctions( Label, retval )
+	Useful.rewrite_functions( Label, retval )
 	
 	-- pobierz grupy i dodaj grupę tekstu
 	local groups = args.groups or {}
 	table.insert( groups, "text" )
 	
 	-- inicjalizacja grup i funkcji
-	Visual.Initialize( retval, groups, args )
+	Visual.initialize( retval, groups, args )
 	
 	-- ustaw dodatkowe zmienne
 	retval:show_empty( args.show_empty or false, false )
@@ -118,8 +118,8 @@ function Label:draw( cr )
 	end
 
 	-- rysuj kontrolkę i tekst
-	self:DrawVisual( cr )
-	self:DrawText( cr )
+	self:draw_visual( cr )
+	self:draw_text( cr )
 
 end
 
@@ -150,16 +150,16 @@ function Label:fit( width, height )
 	new_height = height > 0 and height - marh or height
 	
 	-- wymiary tekstu
-	local tw, th = self:CalcTextDims( new_width, new_height )
+	local tw, th = self:calc_text_dims( new_width, new_height )
 
 	-- zerowe wymiary
 	if (not self._drawnil and tw == 0) or th == 0 then
 		return 0, 0
 	end
 	
-	if self.CalcImageScale then
-		self:CalcImageScale( width, height )
-		-- self:CalcImageScale( tw + marw, th + marh )
+	if self.calc_image_scale then
+		self:calc_image_scale( width, height )
+		-- self:calc_image_scale( tw + marw, th + marh )
 	end
 
 	-- dodaj wcięcia

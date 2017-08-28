@@ -50,7 +50,7 @@ local Layout  = {}
  *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
  *     args   Argumenty przekazane podczas tworzenia kontrolki.
 ]]-- ===========================================================================
-local function Constructor( widget, args )
+local function constructor( widget, args )
 	args = args or {}
 	local screen = args.worker_screen or 1
 
@@ -62,32 +62,32 @@ local function Constructor( widget, args )
 		widget.worker = {}
 	end
 
-	Useful.RewriteFunctions( Layout, widget.worker )
+	Useful.rewrite_functions( Layout, widget.worker )
 
 	widget.worker._widget  = widget
 	widget.worker._screen  = screen
 	widget.worker._image   = args.worker_image
 	widget.worker._text    = args.worker_text
-	widget.worker._imgfunc = args.worker_imgfunc or "SetImage"
-	widget.worker._txtfunc = args.worker_txtfunc or "SetText"
+	widget.worker._imgfunc = args.worker_imgfunc or "set_image"
+	widget.worker._txtfunc = args.worker_txtfunc or "set_text"
 	widget.worker._imgsrc  = args.worker_imgsrc or Theme.layouts
 
-	widget.worker:Update()
+	widget.worker:update()
 	
 	-- aktualizacja rozmieszczenia okien
-	local function TagUpdate( tag )
-		return widget.worker:Update()
+	local function tag_update( tag )
+		return widget.worker:update()
 	end
 	
 	-- odbieranie sygnałów
-	ATag.attached_connect_signal( screen, "property::layout", TagUpdate )
-	ATag.attached_connect_signal( screen, "property::selected", TagUpdate )
+	ATag.attached_connect_signal( screen, "property::layout", tag_update )
+	ATag.attached_connect_signal( screen, "property::selected", tag_update )
 	
 	-- reagowanie na naciśnięcie przycisku
 	if args.worker_signal == nil or args.worker_signal then
 		widget:connect_signal(
 			"button::release",
-			widget.worker.OnButtonRelease
+			widget.worker.on_button_release
 		)
 	end
 end
@@ -98,15 +98,23 @@ end
  * PARAMETERS:
  *     worker Zadanie przypisane do kontrolki.
 ]]-- ===========================================================================
-function Layout.Update( worker )
+function Layout.update( worker )
 	local name   = WLayout.getname( WLayout.get(worker._screen) )
 	local widget = worker._widget
 
 	if worker._image then
-		widget[worker._imgfunc]( widget, worker._imgsrc[name] )
+		if not widget[worker._imgfunc] then
+			error("Function '" .. worker._imgfunc .. "' not exists!")
+		else
+			widget[worker._imgfunc]( widget, worker._imgsrc[name] )
+		end
 	end
 	if worker._text then
-		widget[worker._txtfunc]( widget, name )
+		if not widget[worker._txtfunc] then
+			error("Function '" .. worker._txtfunc .. "' not exists!")
+		else
+			widget[worker._txtfunc]( widget, name )
+		end
 	end
 end
 
@@ -124,7 +132,7 @@ end
  *     y      Pozycja Y kursora.
  *     button Numer przycisku który kliknał użytkownik.
 ]]-- ===========================================================================
-function Layout.OnButtonRelease( widget, x, y, button )
+function Layout.on_button_release( widget, x, y, button )
 	if button == 1 then
 		WLayout.inc( 1, widget.worker._screen )
 	elseif button == 3 then
@@ -135,7 +143,7 @@ end
 Layout.mt = {}
 
 function Layout.mt:__call(...)
-	return Constructor(...)
+	return constructor(...)
 end
 
 return setmetatable( Layout, Layout.mt )

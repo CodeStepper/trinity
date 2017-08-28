@@ -315,7 +315,7 @@ local function new( args )
 		_limits = {} -- { min_width, min_height, max_width, max_height }
 	}
 	-- dodawanie funkcji do obiektu
-	useful.RewriteFunctions( popup, retval )
+	useful.rewrite_functions( popup, retval )
 	
 	-- tworzenie panelu
 	retval._drawbox = drawbox({

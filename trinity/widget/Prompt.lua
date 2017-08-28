@@ -313,7 +313,7 @@ local function new( args )
 	retval._type    = "composite"
 
 	-- przypisz funkcje do obiektu
-	Useful.RewriteFunctions( Prompt, retval )
+	Useful.rewrite_functions( Prompt, retval )
 	
 	-- ustaw zmienne (nie można ich potem zmienić w trakcie działania)
 	retval.history_file      = args.history or Util.getdir("cache") .. "/history"

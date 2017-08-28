@@ -54,7 +54,7 @@ function sound.update( widget )
     end
     
     -- wyświetl poziom głośności
-    widget:SetText( vol .. "%" )
+    widget:set_text( vol .. "%" )
     
     -- wyciszenie
     if mute == true then
@@ -75,7 +75,7 @@ function sound.update( widget )
     end
     
     -- ustaw ikonę
-    widget:SetImage( image )
+    widget:set_image( image )
 end
 
 -- NEW

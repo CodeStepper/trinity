@@ -82,7 +82,7 @@ local function new( args )
 	end
 	
 	-- dodawanie funkcji do obiektu
-	Useful.RewriteFunctions( Flex, retval )
+	Useful.rewrite_functions( Flex, retval )
 
 	local groups = args.groups or {}
 	
@@ -94,7 +94,7 @@ local function new( args )
 	end
 
 	-- inicjalizacja strefy odpowiedzialnej za wygląd
-	Visual.Initialize( retval, groups, args )
+	Visual.initialize( retval, groups, args )
 	
 	-- kierunek umieszczania elementów
 	retval._widgets = {}
@@ -124,7 +124,7 @@ end
 
 function Flex:draw( cr )
 	-- część wizualna
-	self:DrawVisual( cr )
+	self:draw_visual( cr )
 	
 	-- rysuj elementy ze zmienionym kolorem czcionki
 	if self._fore then
@@ -229,7 +229,7 @@ function Flex:add( widget, emiter )
 	widget:connect_signal( "widget::resized", self.emit_resized )
 
 	if emiter then
-		widget:signal_emiter( self )
+		widget:signal_emitter( self )
 	end
 
 	self:emit_signal( "widget::resized" )

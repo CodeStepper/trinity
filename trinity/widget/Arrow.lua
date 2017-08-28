@@ -534,7 +534,7 @@ local function new( args )
 	retval._type    = "composite"
 
 	-- przypisz funkcje do obiektu
-	Useful.RewriteFunctions( Arrow, retval )
+	Useful.rewrite_functions( Arrow, retval )
 	
 	-- pobierz grupy i dodaj grupę tekstu
 	local groups = args.groups or {}
@@ -547,7 +547,7 @@ local function new( args )
 	end
 	
 	-- inicjalizacja grup i funkcji
-	Visual.Initialize( retval, groups, args )
+	Visual.initialize( retval, groups, args )
 	
 	-- aktualizacja elementu
 	retval.emit_updated = function()

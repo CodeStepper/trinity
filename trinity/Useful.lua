@@ -23,9 +23,6 @@
 --  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-local pairs = pairs
-local type  = type
-
 local Pango   = require("lgi").Pango
 local Surface = require("gears.surface")
 local Useful  = {}
@@ -95,7 +92,7 @@ Useful.FONT_GRAVITY = {
  * RETURNS:
  *     Lista czcionek o stałej szerokości.
 ]]-- ===========================================================================
-function Useful.MonospaceFontList( layout )
+function Useful.monospace_font_list( layout )
 	if Useful.monospace_fonts ~= nil then
 		return Useful.monospace_fonts
 	end
@@ -128,13 +125,13 @@ end
  *         - size - rozmiar czcionki
  *         - gravity - jeden z Useful.FONT_GRAVITY
  *     Każdy opis jest zapisywany i identyfikowany przez podawaną nazwę.
- *     Można go potem pobrać używająć funkcji Useful.GetFontDescription.
+ *     Można go potem pobrać używająć funkcji Useful.get_font_description.
  * 
  * PARAMETERS:
  *     name    Nazwa pod którą zapisany będzie opis czcionki.
  *     options Opcje używane podczas tworzenia obiektu opisu czcionki.
 ]]-- ===========================================================================
-function Useful.CreateFontDescription( name, options )
+function Useful.create_font_description( name, options )
 	if not Useful.fonts then
 		Useful.fonts = {}
 	end
@@ -207,7 +204,7 @@ end
  * RETURNS:
  *     Obiekt opisu czcionki lub nil gdy brak.
 ]]-- ===========================================================================
-function Useful.GetFontDescription( name )
+function Useful.get_font_description( name )
 	if Useful.fonts == nil then
 		return nil
 	end
@@ -238,7 +235,7 @@ end
  * RETURNS:
  *     Obiekt utworzonego licznika.
 ]]-- ===========================================================================
-function Useful.Timer( timeout, name )
+function Useful.timer( timeout, name )
 	if type(timeout) ~= "number" then
 		return
 	end
@@ -274,7 +271,7 @@ end
  *     object Obiekt z którego funkcje będą kopiowane.
  *     retval Obiekt do którego funkcje mają być kopiowane.
 ]]-- ===========================================================================
-function Useful.RewriteFunctions( object, retval )
+function Useful.rewrite_functions( object, retval )
 	for key, val in pairs(object) do
 		if type(val) == "function" then
 			retval[key] = val
@@ -291,7 +288,7 @@ end
  * RETURNS:
  *     Obiekt surface zawierający wczytany obraz lub wartość false.
 ]]-- ===========================================================================
-function Useful.LoadImage( path )
+function Useful.load_image( path )
 	local success, result = pcall( Surface.load, path )
 
 	if not success then

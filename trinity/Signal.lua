@@ -1,28 +1,37 @@
---[[ ////////////////////////////////////////////////////////////////////////////////////////
- @author    : sobiemir
- @release   : v3.5.6
-
- Nowa koncepcja wysyłania / odbierania sygnałów.
-////////////////////////////////////////////////////////////////////////////////////////// ]]
-
--- @todo Możliwość wyrzucenia wszystkich przypisanych zdarzeń
-
---[[ require
-========================================================================================== ]]
+--
+--  Trinity Widget Library >>> http://trinity.aculo.pl
+--   _____     _     _ _       
+--  |_   _|___|_|___|_| |_ _ _ 
+--    | | |  _| |   | |  _| | |
+--    |_| |_| |_|_|_|_|_| |_  |
+--                        |___|
+--
+--  This file is part of Trinity Widget Library for AwesomeWM
+--  Copyright (c) by sobiemir <sobiemir@aculo.pl>
+--
+--  This program is free software: you can redistribute it and/or modify
+--  it under the terms of the GNU General Public License as published by
+--  the Free Software Foundation, either version 3 of the License, or
+--  (at your option) any later version.
+--
+--  This program is distributed in the hope that it will be useful,
+--  but WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--  GNU General Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License
+--  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--
 
 local capi = {
 	mouse    = mouse,
 	mgrabber = mousegrabber
 }
-
-local pairs  = pairs
-local type   = type
-local error  = error
-local next   = next
 local Signal = {}
 
--- sygnały długodystansowe
-Signal.long_emiter = {
+-- Sygnały długodystansowe.
+-- =============================================================================
+Signal.long_emitter = {
 	["mouse::enter"   ] = "_mouse_regs",
 	["mouse::move"    ] = "_mouse_regs",
 	["mouse::leave"   ] = "_mouse_regs",
@@ -31,7 +40,8 @@ Signal.long_emiter = {
 	["button::click"  ] = "_button_regs"
 }
 
--- szybkie ustawianie zmiennych dla sygnałów długodystansowych
+-- Szybkie ustawianie zmiennych dla sygnałów długodystansowych.
+-- =============================================================================
 Signal.long_setter = {
 	["mouse::enter"   ] = function(t,w,b) t._mouse_regs[w][1]  = b end,
 	["mouse::move"    ] = function(t,w,b) t._mouse_regs[w][2]  = b end,
@@ -41,17 +51,88 @@ Signal.long_setter = {
 	["button::click"  ] = function(t,w,b) t._button_regs[w][3] = b end
 }
 
---[[ Signal:add_signal
-=============================================================================================
- Zachowana dla kompatybilności z wcześniejszym systemem.
- Zawsze można jej użyć aby zaznaczyć w kodzie, że sygnał został w tym miejscu dodany.
- 
- - name : nazwa sygnału do dodania.
-========================================================================================== ]]
+--[[
+ * Inicjalizuje system wysyłania i przechwytywania sygnałów.
+ *
+ * DESCRIPTION:
+ *     Każda szanująca się kontrolka powinna mieć możliwość przypięcia się do
+ *     sygnału lub jego emisji.
+ *     Sygnał można podpiąć do kontrolki funkcją connect_signal.
+ *
+ *     Aby wysyłanie sygnałów było możliwe, należy do każdego z nich podpiąć
+ *     menedżer, który będzie je rozsyłał po kontrolkach potomnych.
+ *     
+ *     Lista domyślnych sygnałów możliwych do podpięcia:
+ *         - mouse::enter
+ *         - mouse::move
+ *         - mouse::leave
+ *         - button::press
+ *         - button::release
+ *         - button::click
+ * 
+ * PARAMETERS:
+ *     widget Element do stylizacji [automat].
+ *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
+ *     args   Argumenty przekazane podczas tworzenia kontrolki.
+]]-- ===========================================================================
+function Signal.initialize( object, manager )
+	object._signals = {}
 
-function Signal:add_signal( name )
-	if not self._signals[name] then
-		self._signals[name] = {}
+	if not object._bounds then
+		object._bounds  = { 0, 0, 0, 0, 0, 0 }
+	end
+
+	object.add_signal        = Signal.add_signal
+	object.connect_signal    = Signal.connect_signal
+	object.multi_connect     = Signal.multi_connect
+	object.get_signals       = Signal.get_signals
+	object.disconnect_signal = Signal.disconnect_signal
+	object.emit_signal       = Signal.emit_signal
+	object.signal_emitter    = Signal.signal_emitter
+	object.emit_bounds       = Signal.emit_bounds
+	
+	-- obiekt będzie przechwytywał sygnały
+	if type(manager) == "table" then
+		object.register_signal = Signal.register_signal
+		
+		-- zmienne rejestracji elementów
+		object._mouse_regs  = {}
+		object._button_regs = {}
+
+		for key, val in pairs(manager) do
+			if val == "mouse::move" then
+				object:connect_signal( "mouse::move",
+					Signal.move_emitter
+				)
+			elseif val == "mouse::leave" then
+				object:connect_signal( "mouse::leave",
+					Signal.leave_emitter
+				)
+			elseif val == "button::press" then
+				object:connect_signal( "button::press",
+					Signal.press_emitter
+				)
+			elseif val == "button::release" then
+				object:connect_signal( "button::release",
+					Signal.release_emitter
+				)
+			end
+		end
+
+	-- obiekt będzie zarządzał sygnałami
+	elseif manager then
+		object.signal_emitter   = nil
+		object.register_signal = Signal.register_signal
+		
+		-- zmienne rejestracji elementów
+		object._mouse_regs  = {}
+		object._button_regs = {}
+
+		-- przechwytywane zdarzenia do przetworzenia
+		object:connect_signal( "mouse::move", Signal.move_emitter )
+		object:connect_signal( "mouse::leave", Signal.leave_emitter )
+		object:connect_signal( "button::press", Signal.press_emitter )
+		object:connect_signal( "button::release", Signal.release_emitter )
 	end
 end
 
@@ -70,9 +151,9 @@ function Signal:connect_signal( name, func )
 
 	self._signals[name][func] = func
 	
-	-- rejestruj element z sygnałem w emiterze
-	if self._emiter then
-		self._emiter:register_signal( self, name )
+	-- rejestruj element z sygnałem w emitterze
+	if self._emitter then
+		self._emitter:register_signal( self, name )
 	end
 
 	return self
@@ -139,10 +220,10 @@ function Signal:disconnect_signal( name, func )
 	
 	self._signals[name][func] = nil
 	
-	if self._emiter then
-		-- wyrejestruj element dla sygnału w emiterze gdy tablica jest pusta
+	if self._emitter then
+		-- wyrejestruj element dla sygnału w emitterze gdy tablica jest pusta
 		if next(self._signals[name]) == nil then
-			self._emiter:unregister_signal( self, name )
+			self._emitter:deregister_signal( self, name )
 		end
 	end
 end
@@ -166,44 +247,44 @@ function Signal:emit_signal( name, ... )
 	end
 end
 
---[[ Signal:signal_emiter
+--[[ Signal:signal_emitter
 =============================================================================================
- Ustaw nowy emiter sygnału dla podanej kontrolki.
- Emiter musi zawierać kontrolkę, dlatego emiterem powinno być okienko lub układ.
+ Ustaw nowy emitter sygnału dla podanej kontrolki.
+ Emiter musi zawierać kontrolkę, dlatego emitterem powinno być okienko lub układ.
  
- - emiter : ---
+ - emitter : ---
 ========================================================================================== ]]
 
-function Signal:signal_emiter( emiter )
-	if not emiter.register_signal then
-		error( "This object is not valid signal emiter." )
+function Signal:signal_emitter( emitter )
+	if not emitter.register_signal then
+		error( "This object is not valid signal emitter." )
 		return
 	end
 	
 	-- nic się nie zmieniło...
-	if self._emiter == emiter then
+	if self._emitter == emitter then
 		return
 	end
 	
-	-- wyrejestruj sygnały dla poprzedniego emitera
-	if self._emiter then
-		self._emiter:unregister_signal( self, nil )
+	-- wyrejestruj sygnały dla poprzedniego emittera
+	if self._emitter then
+		self._emitter:deregister_signal( self, nil )
 	end
 	
-	self._emiter = emiter
+	self._emitter = emitter
 	
 	-- rejestruj sygnały...
 	for key, val in pairs(self._signals) do
 		if next(val) ~= nil then
-			emiter:register_signal( self, key )
+			emitter:register_signal( self, key )
 		end
 	end
 end
 
 --[[ Signal:register_signal
 =============================================================================================
- Rejestracja sygnału w emiterze dla podanego elementu.
- Lista dostępnych sygnałów: Signal.long_emiter.
+ Rejestracja sygnału w emitterze dla podanego elementu.
+ Lista dostępnych sygnałów: Signal.long_emitter.
  
  - widget : element do rejestracji.
  - name   : sygnał do rejestracji (musi już istnieć).
@@ -215,11 +296,11 @@ function Signal:register_signal( widget, name )
 	end
 	
 	-- podany sygnał długodystansowy nie istnieje...
-	if not Signal.long_emiter[name] then
+	if not Signal.long_emitter[name] then
 		return
 	end
 	
-	local sigvar = Signal.long_emiter[name]
+	local sigvar = Signal.long_emitter[name]
 
 	-- utwórz nową tablicę
 	if not self[sigvar][widget] then
@@ -230,22 +311,22 @@ function Signal:register_signal( widget, name )
 	Signal.long_setter[name]( self, widget, true )
 end
 
---[[ Signal:unregister_signal
+--[[ Signal:deregister_signal
 =============================================================================================
- Wyrejestrowywanie sygnału z emitera.
+ Wyrejestrowywanie sygnału z emittera.
  Przeważnie funkcja uruchamiana jest automatycznie.
  
  - widget : element do usunięcia.
  - name   : sygnał do przeszukania.
 ========================================================================================== ]]
 
-function Signal:unregister_signal( widget, name )
+function Signal:deregister_signal( widget, name )
 	if not widget then
 		return
 	end
 	
 	-- podany sygnał długodystansowy nie istnieje...
-	if not Signal.long_emiter[name] then
+	if not Signal.long_emitter[name] then
 		return
 	end
 
@@ -254,7 +335,7 @@ function Signal:unregister_signal( widget, name )
 		self._mouse_regs[widget]  = nil
 		self._button_regs[widget] = nil
 	else
-		local sigvar = Signal.long_emiter[name]
+		local sigvar = Signal.long_emitter[name]
 		
 		-- nie ma niczego do wyrejestrowywania
 		if not self[sigvar][widget] then
@@ -276,7 +357,7 @@ function Signal:unregister_signal( widget, name )
 	end
 end
 
---[[ Signal.move_emiter
+--[[ Signal.move_emitter
 =============================================================================================
  Dalsza emisja sygnałów (do zarejestrowanych kontrolek).
  Emitowane sygnały: "mouse::enter", "mouse::move", "mouse::leave".
@@ -289,7 +370,7 @@ end
  - y      : pozycja Y myszy.
 ========================================================================================== ]]
 
-function Signal.move_emiter( object, x, y )
+function Signal.move_emitter( object, x, y )
 	local bds
 	
 	-- sprawdzaj wszystkie zarejestrowane elementy
@@ -318,7 +399,7 @@ function Signal.move_emiter( object, x, y )
 	end
 end
 
---[[ Signal.leave_emiter
+--[[ Signal.leave_emitter
 =============================================================================================
  Dalsza emisja sygnałów (do zarejestrowanych kontrolek).
  Emitowane sygnały: "mouse::leave".
@@ -326,7 +407,7 @@ end
  - object : obiekt przechwytujący zdarzenie.
 ========================================================================================== ]]
 
-function Signal.leave_emiter( object )
+function Signal.leave_emitter( object )
 	-- sprawdzaj wszystkie zarejestrowane elementy
 	for key, val in pairs(object._mouse_regs) do
 		-- wyjście z kontrolki
@@ -337,7 +418,7 @@ function Signal.leave_emiter( object )
 	end
 end
 
---[[ Signal.press_emiter
+--[[ Signal.press_emitter
 =============================================================================================
  Dalsza emisja sygnałów (do zarejestrowanych kontrolek).
  Emitowane sygnały:
@@ -350,7 +431,7 @@ end
  - mods   : wciśnięte modyfikatory (klawiatura).
 ========================================================================================== ]]
 
-function Signal.press_emiter( object, x, y, button, mods )
+function Signal.press_emitter( object, x, y, button, mods )
 	local bds
 
 	-- sprawdzaj wszystkie zarejestrowane elementy
@@ -429,7 +510,7 @@ function Signal.press_emiter( object, x, y, button, mods )
 	end -- for
 end
 
---[[ Signal.release_emiter
+--[[ Signal.release_emitter
 =============================================================================================
  Dalsza emisja sygnałów (do zarejestrowanych kontrolek).
  Emitowane sygnały: "button::click", "button::release".
@@ -443,7 +524,7 @@ end
  - mods   : wciśnięte modyfikatory (klawiatura).
 ========================================================================================== ]]
 
-function Signal.release_emiter( object, x, y, button, mods )
+function Signal.release_emitter( object, x, y, button, mods )
 	local bds
 
 	-- sprawdzaj wszystkie zarejestrowane elementy
@@ -494,68 +575,6 @@ function Signal:emit_bounds( gx, gy, gw, gh )
 
 	self._bounds[3] = self._bounds[1] + self._bounds[5]
 	self._bounds[4] = self._bounds[2] + self._bounds[6]
-end
-
---[[ Signal.initialize
-=============================================================================================
- Inicjalizacja systemu przechwytywania i emisji sygnałów.
- 
- - object  : obiekt do inicjalizacji.
- - manager : menedżer - obiekt będzie rozsyłał sygnały po dzieciach.
-========================================================================================== ]]
-
-function Signal.initialize( object, manager )
-	-- dodaj zmienne
-	object._signals = {}
-	object._bounds  = { 0, 0, 0, 0, 0, 0 }
-
-	-- dodaj funkcje
-	object.add_signal        = Signal.add_signal
-	object.connect_signal    = Signal.connect_signal
-	object.multi_connect     = Signal.multi_connect
-	object.get_signals       = Signal.get_signals
-	object.disconnect_signal = Signal.disconnect_signal
-	object.emit_signal       = Signal.emit_signal
-	object.signal_emiter     = Signal.signal_emiter
-	object.emit_bounds       = Signal.emit_bounds
-	
-	-- menedżer częściowy, dla układów, znajdują się w menedżerze i rozsyłają zdarzenia po dzieciach
-	-- działają na dwa fronty, dlatego możliwy jest wybór rozsyłanych sygnałów
-	-- można oczywiście każdy element podrzędny podpiąć do najwyższego, czyli do menedżera
-	if type(manager) == "table" then
-		object.register_signal = Signal.register_signal
-		
-		-- zmienne rejestracji elementów
-		object._mouse_regs  = {}
-		object._button_regs = {}
-
-		for key, val in pairs(manager) do
-			if val == "mouse::move" then
-				object:connect_signal( "mouse::move", Signal.move_emiter )
-			elseif val == "mouse::leave" then
-				object:connect_signal( "mouse::leave", Signal.leave_emiter )
-			elseif val == "button::press" then
-				object:connect_signal( "button::press", Signal.press_emiter )
-			elseif val == "button::release" then
-				object:connect_signal( "button::release", Signal.release_emiter )
-			end
-		end
-
-	-- ustanów podany obiekt menedżerem
-	elseif manager then
-		object.signal_emiter   = nil
-		object.register_signal = Signal.register_signal
-		
-		-- zmienne rejestracji elementów
-		object._mouse_regs  = {}
-		object._button_regs = {}
-
-		-- przechwytywane zdarzenia do przetworzenia
-		object:connect_signal( "mouse::move", Signal.move_emiter )
-		object:connect_signal( "mouse::leave", Signal.leave_emiter )
-		object:connect_signal( "button::press", Signal.press_emiter )
-		object:connect_signal( "button::release", Signal.release_emiter )
-	end
 end
 
 --[[ return

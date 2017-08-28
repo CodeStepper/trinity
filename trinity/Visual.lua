@@ -23,10 +23,6 @@
 --  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-local error  = error
-local pairs  = pairs
-local type   = type
-
 local Theme   = require("beautiful")
 local LGI     = require("lgi")
 local GColor  = require("gears.color")
@@ -140,12 +136,15 @@ Visual.IMAGE_EXTEND_TYPE = {
  *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
  *     args   Argumenty przekazane podczas tworzenia kontrolki.
 ]]-- ===========================================================================
-function Visual.Initialize( widget, groups, args )
+function Visual.initialize( widget, groups, args )
 	local group = {}
 	local index = 0
 
 	if widget._vinited then
 		return
+	end
+	if not widget._bounds then
+		widget._bounds = { 0, 0, 0, 0, 0, 0 }
 	end
 
 	-- ustawienia ramki
@@ -179,8 +178,8 @@ function Visual.Initialize( widget, groups, args )
 	widget._bgcolor = nil
 
 	-- wspólne funkcje
-	widget.GetInnerBounds = Visual.GetInnerBounds
-	widget.DrawVisual     = Visual.DrawVisual
+	widget.get_inner_bounds = Visual.get_inner_bounds
+	widget.draw_visual      = Visual.draw_visual
 
 	-- rozpoznaj style grupy
 	for key, val in pairs(groups) do
@@ -189,42 +188,42 @@ function Visual.Initialize( widget, groups, args )
 	
 	-- kolor tła
 	if group.background then
-		widget.SetBackground = Visual.SetBackground
-		widget:SetBackground( args.back_color, false )
+		widget.set_background = Visual.set_background
+		widget:set_background( args.back_color, false )
 	end
 	-- obrazek w tle
 	if group.image then
-		widget.SetImage       = Visual.SetImage
-		widget.SetImageAlign  = Visual.SetImageAlign
-		widget.SetImageSize   = Visual.SetImageSize
-		widget.SetImageExtend = Visual.SetImageExtend
-		widget.CalcImageScale = Visual.CalcImageScale
+		widget.set_image        = Visual.set_image
+		widget.set_image_align  = Visual.set_image_align
+		widget.set_image_size   = Visual.set_image_size
+		widget.set_image_extend = Visual.set_image_extend
+		widget.calc_image_scale = Visual.calc_image_scale
 
-		widget:SetImage( args.back_image, false )
-			:SetImageAlign( args.image_align or "Center", false )
-			:SetImageSize( args.image_size or "Zoom", false )
-			:SetImageExtend( args.image_extend or "None", false )
+		widget:set_image( args.back_image, false )
+			:set_image_align( args.image_align or "Center", false )
+			:set_image_size( args.image_size or "Zoom", false )
+			:set_image_extend( args.image_extend or "None", false )
 	end
 	-- wcięcie
 	if group.padding then
-		widget.SetPadding = Visual.SetPadding
-		widget:SetPadding( args.padding or 0, false )
+		widget.set_padding = Visual.set_padding
+		widget:set_padding( args.padding or 0, false )
 	end
 	-- ramka
 	if group.border then
-		widget.SetBorderSize  = Visual.SetBorderSize
-		widget.SetBorderColor = Visual.SetBorderColor
+		widget.set_border_size  = Visual.set_border_size
+		widget.set_border_color = Visual.set_border_color
 
-		widget:SetBorderSize( args.border_size or 0, false )
-			:SetBorderColor( args.border_color, false )
+		widget:set_border_size( args.border_size or 0, false )
+			:set_border_color( args.border_color, false )
 	end
 	-- kolor czcionki
 	-- na pierwszy rzut oka może wydawać się nielogiczne oddzielanie koloru
 	-- czionki od samej czcionki, jednak kolor czcionki jest dziedziczony
 	-- np. układ może mieć możliwość ustawienia koloru czcionki ale nie tekstu
 	if group.foreground then
-		widget.SetForeground = Visual.SetForeground
-		widget:SetForeground( args.foreground, false )
+		widget.set_foreground = Visual.set_foreground
+		widget:set_foreground( args.foreground, false )
 	end
 	-- tekst
 	if group.text then
@@ -235,24 +234,24 @@ function Visual.Initialize( widget, groups, args )
 			)
 		end
 
-		widget.SetText      = Visual.SetText
-		widget.SetMarkup    = Visual.SetMarkup
-		widget.SetFont      = Visual.SetFont
-		widget.SetEllipsize = Visual.SetEllipsize
-		widget.SetTextAlign = Visual.SetTextAlign
-		widget.SetWrap      = Visual.SetWrap
-		widget.DrawText     = Visual.DrawText
-		widget.CalcTextDims = Visual.CalcTextDims
+		widget.set_text       = Visual.set_text
+		widget.set_markup     = Visual.set_markup
+		widget.set_font       = Visual.set_font
+		widget.set_ellipsize  = Visual.set_ellipsize
+		widget.set_text_align = Visual.set_text_align
+		widget.set_wrap       = Visual.set_wrap
+		widget.draw_text      = Visual.draw_text
+		widget.calc_text_dims = Visual.calc_text_dims
 
-		widget:SetFont( args.font, false )
-			:SetEllipsize( args.ellipsize  or "None", false )
-			:SetTextAlign( args.text_align or "Left", false )
-			:SetWrap( args.wrap or "WordChar", false )
+		widget:set_font( args.font, false )
+			:set_ellipsize( args.ellipsize  or "None", false )
+			:set_text_align( args.text_align or "Left", false )
+			:set_wrap( args.wrap or "WordChar", false )
 
 		if type(args.markup) == "string" then
-			widget:SetMarkup( args.markup, false )
+			widget:set_markup( args.markup, false )
 		elseif type(args.text) == "string" then
-			widget:SetText( args.text, false )
+			widget:set_text( args.text, false )
 		end
 	end
 	return widget
@@ -265,7 +264,7 @@ end
  *     widget Element do rysowania [automat].
  *     cr     Obiekt Cairo.
 ]]-- ===========================================================================
-function Visual.DrawVisual( widget, cr )
+function Visual.draw_visual( widget, cr )
 	if  not widget._border.visible and
 		not widget._bgcolor and
 		not widget._image.surface then
@@ -393,7 +392,7 @@ end
  * RETURNS:
  *     Pozycję X, Y, szerokość i wysokość kontrolki.
 ]]-- ===========================================================================
-function Visual.GetInnerBounds( widget )
+function Visual.get_inner_bounds( widget )
 	local padding = widget._padding
 	local bounds  = widget._bounds
 	
@@ -430,11 +429,11 @@ end
  *
  * CODE:
  *     -- wszystkie strony kontrolki mają to samo wcięcie
- *     widget:SetPadding( 4 )
+ *     widget:set_padding( 4 )
  *     -- prawa i lewa ma wcięcie 4, góra i dół 8
- *     widget:SetPadding( {4, 8} )
+ *     widget:set_padding( {4, 8} )
  *     -- tutaj każda strona ma inne wcięcie
- *     widget:SetPadding( {2, 4, 6, 8} )
+ *     widget:set_padding( {2, 4, 6, 8} )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -444,7 +443,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetPadding( widget, padding, refresh )
+function Visual.set_padding( widget, padding, refresh )
 	size = (type(size) == "number" or type(size) == "table")
 		and size
 		or  0
@@ -491,9 +490,9 @@ end
  *
  * CODE:
  *     -- zwykły kolor w formacie HEX
- *     widget:SetBackground( "#0125AA" )
+ *     widget:set_background( "#0125AA" )
  *     -- gradient radialny
- *     widget:SetBackground({
+ *     widget:set_background({
  *         type = "radial",
  *         from = { 50, 50, 10 },
  *         to = { 55, 55, 30 },
@@ -512,7 +511,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetBackground( widget, color, refresh )
+function Visual.set_background( widget, color, refresh )
 	widget._bgcolor = color
 		and GColor( color )
 		or  nil
@@ -536,7 +535,7 @@ end
  *     użycie funkcji z biblioteki gears zwracających obiekt Surface.
  *
  * CODE:
- *     widget:SetImage( "/home/user/images/sample.jpg" )
+ *     widget:set_image( "/home/user/images/sample.jpg" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -546,10 +545,10 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetImage( widget, image, refresh )
+function Visual.set_image( widget, image, refresh )
 	-- ściezka do obrazka - załaduj obrazek
 	if type(image) == "string" then
-		image = Useful.LoadImage( image )
+		image = Useful.load_image( image )
 	end
 	if image == nil then
 		widget._image.dims    = { 0, 0 }
@@ -583,7 +582,7 @@ end
  *     lub jest ustawiony na typ powiększenia "Contains".
  *
  * CODE:
- *     widget:SetImageAlign( "BottomRight" )
+ *     widget:set_image_align( "BottomRight" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -593,7 +592,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetImageAlign( widget, align, refresh )
+function Visual.set_image_align( widget, align, refresh )
 	if not align or not Visual.ALIGN_TYPE[align] then
 		return widget
 	end
@@ -617,7 +616,7 @@ end
  *     granice wymiarów kontrolki.
  *
  * CODE:
- *     widget:SetImageSize( "Contains" )
+ *     widget:set_image_size( "Contains" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -627,7 +626,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetImageSize( widget, size, refresh )
+function Visual.set_image_size( widget, size, refresh )
 	widget._image.size = Visual.IMAGE_SIZE_TYPE[size] or "Zoom"
 
 	if refresh == nil or refresh then
@@ -646,7 +645,7 @@ end
  *     Lista trybów powtarzania znajduje się w Visual.IMAGE_EXTEND_TYPE.
  *
  * CODE:
- *     widget:SetImageExtend( "Reflect" )
+ *     widget:set_image_extend( "Reflect" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -656,7 +655,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetImageExtend( widget, extend, refresh )
+function Visual.set_image_extend( widget, extend, refresh )
 	widget._image.extend = Visual.IMAGE_EXTEND_TYPE[extend] or "None"
 
 	if refresh == nil or refresh then
@@ -676,7 +675,7 @@ end
  * RETURNS:
  *     Szerokość i wysokość obrazka po przeskalowaniu.
 ]]-- ===========================================================================
-function Visual.CalcImageScale( widget, width, height )
+function Visual.calc_image_scale( widget, width, height )
 	local new_width  = width
 	local new_height = height
 	
@@ -735,7 +734,7 @@ end
  *     Najbardziej popularnym formatem koloru jest format HEX (np. #0125AA).
  *
  * CODE:
- *     widget:SetForeground( "#0125AA" )
+ *     widget:set_foreground( "#0125AA" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -745,7 +744,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetForeground( widget, color, refresh )
+function Visual.set_foreground( widget, color, refresh )
 	widget._text.color = color
 		and GColor( color )
 		or  nil
@@ -777,9 +776,9 @@ end
  *     każdej strony kontrolki.
  *
  * CODE:
- *     widget:SetBorderSize( 5 )
- *     widget:SetBorderSize( {5, 2} )
- *     widget:SetBorderSize( {1, 4, 5, 2} )
+ *     widget:set_border_size( 5 )
+ *     widget:set_border_size( {5, 2} )
+ *     widget:set_border_size( {1, 4, 5, 2} )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -789,7 +788,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetBorderSize( widget, size, refresh )
+function Visual.set_border_size( widget, size, refresh )
 	size = (type(size) == "number" or type(size) == "table")
 		and size
 		or  0
@@ -850,7 +849,7 @@ end
  *     Najbardziej popularnym formatem koloru jest format HEX (np. #0125AA).
  *
  * CODE:
- *     widget:SetBorderColor( "#0125AA" )
+ *     widget:set_border_color( "#0125AA" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -860,7 +859,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetBorderColor( widget, color, refresh )
+function Visual.set_border_color( widget, color, refresh )
 	widget._border.visible = false
 	widget._border.color   = color
 		and GColor( color )
@@ -888,7 +887,7 @@ end
  * Zmienia tekst wyświetlany w kontrolce.
  *
  * CODE:
- *     widget:SetText( "Example" )
+ *     widget:set_text( "Example" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -898,7 +897,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetText( widget, text, refresh )
+function Visual.set_text( widget, text, refresh )
 	if widget._cairo_layout.text == text then
 		return widget
 	end
@@ -922,7 +921,7 @@ end
  *     zwykły tekst z atrybutami utworzonymi podczas parsowania.
  * 
  * CODE:
- *     widget:SetMarkup( "<b>E</b><s>x</s>am<i>ple</i>" )
+ *     widget:set_markup( "<b>E</b><s>x</s>am<i>ple</i>" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -932,7 +931,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetMarkup( widget, text, refresh )
+function Visual.set_markup( widget, text, refresh )
 	local attr, parsed = Pango.parse_markup( text, -1, 0 )
 	if not attr then
 		error( parsed )
@@ -962,14 +961,14 @@ end
  *     Useful - CreateFontDescription i GetFontDescription).
  * 
  * CODE:
- *     widget:SetFont( "Arial 8" )
+ *     widget:set_font( "Arial 8" )
  *     Useful.CreateFontDescription("DJV8", {
  *         family: "DejaVu Sans",
  *         size: 8,
  *         style: "Italic",
  *         weight: "Bold"
  *     })
- *     widget:SetFont( Useful.GetFontDescription("DJV8") )
+ *     widget:set_font( Useful.GetFontDescription("DJV8") )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -979,7 +978,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetFont( widget, font, refresh )
+function Visual.set_font( widget, font, refresh )
 	local fobj = type(font) ~= "userdata"
 		and Theme.get_font(font)
 		or  font
@@ -1013,7 +1012,7 @@ end
  *     Miejsce jego położenia definiuje jedna z wartości Vsiual.ELLIPSIZE_TYPE.
  * 
  * CODE:
- *     widget:SetEllipsizeType( "Middle" )
+ *     widget:set_ellipsizeType( "Middle" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -1023,7 +1022,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetEllipsize( widget, type, refresh )
+function Visual.set_ellipsize( widget, type, refresh )
 	widget._cairo_layout:set_ellipsize( Visual.ELLIPSIZE_TYPE[type] or "END" )
 
 	if refresh == nil or refresh then
@@ -1040,7 +1039,7 @@ end
  *     Domyślnie tekst przylega do lewej strony na środku.
  *
  * CODE:
- *     widget:SetTextAlign( "BottomRight" )
+ *     widget:set_text_align( "BottomRight" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -1050,7 +1049,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetTextAlign( widget, align, refresh )
+function Visual.set_text_align( widget, align, refresh )
 	if align == nil or Visual.ALIGN_TYPE[align] == nil then
 		return
 	end
@@ -1075,7 +1074,7 @@ end
  *     w przypadku gdy słowo nie mieści się w kontenerze.
  *
  * CODE:
- *     widget:SetWrap( "WrapChar" )
+ *     widget:set_wrap( "WrapChar" )
  *
  * PARAMETERS:
  *     widget  Element do stylizacji [automat].
@@ -1085,7 +1084,7 @@ end
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.SetWrap( widget, wrap, refresh )
+function Visual.set_wrap( widget, wrap, refresh )
 	widget._cairo_layout:set_wrap( Visual.WRAP_TYPE[wrap] or "WORD_CHAR" )
 
 	-- wyślij sygnał aktualizacji elementu
@@ -1100,15 +1099,15 @@ end
  * Rysuje tekst na kontrolce z uwzględnieniem ustawionych opcji.
  *
  * CODE:
- *     widget:SetTextAlign( "BottomRight" )
+ *     widget:set_text_align( "BottomRight" )
  *
  * PARAMETERS:
  *     widget Element do rysowania [automat].
  *     cr     Obiekt Cairo.
 ]]-- ===========================================================================
-function Visual.DrawText( widget, cr )
+function Visual.draw_text( widget, cr )
 	-- pobierz krawędzie kontrolki
-	local x, y, width, height = widget:GetInnerBounds()
+	local x, y, width, height = widget:get_inner_bounds()
 
 	-- przesunięcie w pionie
 	local offset = y
@@ -1145,7 +1144,7 @@ end
  * RETURNS:
  *     Szerokość i wysokość pola tekstowego w kontrolce.
 ]]-- ===========================================================================
-function Visual.CalcTextDims( widget, width, height )
+function Visual.calc_text_dims( widget, width, height )
 	-- przelicz jednostki
 	widget._cairo_layout.width  = LGI.Pango.units_from_double( width )
 	widget._cairo_layout.height = LGI.Pango.units_from_double( height )

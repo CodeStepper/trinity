@@ -99,7 +99,7 @@ local function new( args )
 	end
 	
 	-- dodawanie funkcji do obiektu
-	Useful.RewriteFunctions( FillCenter, retval )
+	Useful.rewrite_functions( FillCenter, retval )
 
 	local groups = args.groups or {}
 	
@@ -111,7 +111,7 @@ local function new( args )
 	end
 
 	-- inicjalizacja strefy odpowiedzialnej za wygląd
-	Visual.Initialize( retval, groups, args )
+	Visual.initialize( retval, groups, args )
 
 	-- aktualizacja elementu
 	retval.emit_updated = function()
@@ -141,7 +141,7 @@ end
 
 function FillCenter:draw( cr )
 	-- część wizualna
-	self:DrawVisual( cr )
+	self:draw_visual( cr )
 	
 	-- rysuj układy ze zmienionym kolorem czcionki
 	if self._fore then
@@ -270,19 +270,19 @@ function FillCenter:set_layouts( fixedleft, flexcenter, fixedright, emitup )
 	-- ustaw te które zostały podane
 	if fixedleft ~= nil then
 		self._widgets.left = fixedleft
-		self._widgets.left:signal_emiter( self )
+		self._widgets.left:signal_emitter( self )
 		self._widgets.left:connect_signal( "widget::updated", self.emit_updated )
 		self._widgets.left:connect_signal( "widget::resized", self.emit_resized )
 	end
 	if flexcenter ~= nil then
 		self._widgets.center = flexcenter
-		self._widgets.center:signal_emiter( self )
+		self._widgets.center:signal_emitter( self )
 		self._widgets.center:connect_signal( "widget::updated", self.emit_updated )
 		self._widgets.center:connect_signal( "widget::resized", self.emit_resized )
 	end
 	if fixedright ~= nil then
 		self._widgets.right = fixedright
-		self._widgets.right:signal_emiter( self )
+		self._widgets.right:signal_emitter( self )
 		self._widgets.right:connect_signal( "widget::updated", self.emit_updated )
 		self._widgets.right:connect_signal( "widget::resized", self.emit_resized )
 	end
