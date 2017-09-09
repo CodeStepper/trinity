@@ -309,61 +309,52 @@ awful.screen.connect_for_each_screen(function(s)
 
 		widgets.wids[s][1] = trinity.widget.label({
 			text       = "Drugi widżet",
-			groups     = {"padding"},
-			groups     = {"background"},
 			padding    = {5, 0, 5, 0},
-			back_color = "#111399"
+			background = "#111399"
 		})
 
 		widgets.wids[s][2] = trinity.widget.label({
 			text       = "Trzeci widżet",
-			back_color = "#425349"
+			background = "#425349"
 		})
 
 		widgets.wids[s][3] = trinity.widget.label({
 			text       = "Pierwszy widżet",
-			groups     = {"background"},
-			back_color = "#011349"
+			background = "#011349"
 		})
 		widgets.wids[s][4] = trinity.widget.label({
 			text    = "Drugi widżet",
-			groups  = {"background"},
-			back_color = "#111399"
+			background = "#111399"
 		})
 		widgets.wids[s][5] = trinity.widget.label({
 			text    = "Trzeci widżet",
-			groups  = {"background"},
-			back_color = "#425349"
+			background = "#425349"
 		})
 
 		widgets.wids[s][6] = trinity.widget.label({
-			groups      = {"background", "image", "padding"},
-			back_color  = "#011349",
-			padding     = { 18, 0, 0, 0 },
-			image_size  = "Original",
-			image_align = "Left",
-			worker      = trinity.worker.layout,
-			worker_text = true
+			background   = "#011349",
+			padding      = { 18, 0, 0, 0 },
+			image_sizing = "Original",
+			image_align  = "Left",
+			worker       = trinity.worker.layout
 		})
 
 		widgets.wids[s][7] = trinity.widget.label({
-			text        = "Drugi widżet",
-			groups      = {"background", "image", "padding"},
-			back_color  = "#111399",
-			image_size  = "Original",
-			image_align = "Left",
-			padding     = { 18, 0, 0, 0 },
-			worker      = trinity.sound
+			text         = "Drugi widżet",
+			background   = "#111399",
+			image_sizing = "Original",
+			image_align  = "Left",
+			padding      = { 18, 0, 0, 0 },
+			worker       = trinity.sound
 		})
 
 		widgets.wids[s][8] = trinity.widget.label({
-			text        = "Trzeci widżet",
-			groups      = {"background", "image", "padding"},
-			back_color  = "#425349",
-			image_size  = "Original",
-			image_align = "Left",
-			padding     = { 18, 0, 0, 0 },
-			worker      = trinity.battery
+			text         = "Trzeci widżet",
+			background   = "#425349",
+			image_sizing = "Original",
+			image_align  = "Left",
+			padding      = { 18, 0, 0, 0 },
+			worker       = trinity.battery
 		})
 
 		widgets.wids[s][9] = trinity.widget.arrow({

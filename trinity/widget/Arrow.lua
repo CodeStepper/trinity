@@ -298,8 +298,8 @@ local Arrow  = {}
 ========================================================================================== ]]
 
 local function draw_left_arrow( cr, self, back, fore )
-	local px, py = self._bounds[1], self._bounds[2]
-	local width, height = self._bounds[5], self._bounds[6]
+	local px, py = self.Bounds[1], self.Bounds[2]
+	local width, height = self.Bounds[5], self.Bounds[6]
 
 	if fore then
 		cr:set_source( fore )
@@ -335,8 +335,8 @@ local function draw_left_arrow( cr, self, back, fore )
 end
 
 local function draw_right_arrow( cr, self, back, fore )
-	local px, py = self._bounds[1], self._bounds[2]
-	local width, height = self._bounds[5], self._bounds[6]
+	local px, py = self.Bounds[1], self.Bounds[2]
+	local width, height = self.Bounds[5], self.Bounds[6]
 
 	if back then
 		cr:set_source( back )
@@ -379,16 +379,16 @@ end
 
 function Arrow:draw( cr )
 	local temp
-	local px, py = self._bounds[1], self._bounds[2]
-	local width, height = self._bounds[5], self._bounds[6]
+	local px, py = self.Bounds[1], self.Bounds[2]
+	local width, height = self.Bounds[5], self.Bounds[6]
 
 	-- nie rysuj gdy wymiary są zerowe...
-	if self._bounds[5] == 0 or self._bounds[6] == 0 then
+	if self.Bounds[5] == 0 or self.Bounds[6] == 0 then
 		return
 	end
 	
-	local back = (self._near_widget and self._near_widget._bgcolor) and self._near_widget._bgcolor or self._bgcolor
-	local fore = (self._far_widget  and self._far_widget._bgcolor ) and self._far_widget._bgcolor  or self._text.color
+	local back = (self._near_widget and self._near_widget.V.Background) and self._near_widget.V.Background or self.V.Background
+	local fore = (self._far_widget  and self._far_widget.V.Background ) and self._far_widget.V.Background  or self.V.TXT.Color
 
 	-- nie rysuj coś czego nie ma...
 	if not self._border and back == nil and fore == nil then
@@ -563,13 +563,13 @@ local function new( args )
 	retval._far_widget  = args.bind_right or args.bind_bottom
 
 	-- sygnały aktualizacji
-	if type(retval._near_widget) == "table" and retval._near_widget._type == "widget" then
+	if type(retval._near_widget) == "table" and retval._near_widget._Type == "widget" then
 		-- retval._near_widget:connect_signal( "widget::resized", retval.emit_resized )
 		-- retval._near_widget:connect_signal( "widget::updated", retval.emit_updated )
 	else
 		retval._near_widget = nil
 	end
-	if type(retval._far_widget) == "table" and retval._far_widget._type == "widget" then
+	if type(retval._far_widget) == "table" and retval._far_widget._Type == "widget" then
 		-- retval._far_widget:connect_signal( "widget::resized", retval.emit_resized )
 		-- retval._far_widget:connect_signal( "widget::updated", retval.emit_updated )
 	else

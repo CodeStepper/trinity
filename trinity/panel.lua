@@ -49,6 +49,12 @@ end
 -- =================================================================================================
 
 local function refresh_drawbox_strut( drawbox )
+-- Theme handling library
+local naughty = require("naughty")
+        naughty.notify({ preset = naughty.config.presets.critical,
+                                         title = "Oops, there were errors during startup!",
+                                         text = tostring(beautiful.xresources.get_dpi(1))})
+
     for _, wprop in ipairs(panels) do
         if wprop.wibox == drawbox then
             -- jeżeli nie jest widoczny, nie wyświetlaj... logiczne...
@@ -155,9 +161,10 @@ end
 -- @todo Sprawdzić dokładnie jakie argumenty może jeszcze przyjąć.
 -- =================================================================================================
 
-local function new( args )
+local function constructor( args )
     local args    = args or {}
     local stretch = true
+    local retval  = {}
 
     -- wartości domyślne
     args.position = args.position or "top"
@@ -203,7 +210,7 @@ local function new( args )
     end
 
     -- kontener do rysowania
-    local retval = {
+    retval = {
         _drawbox  = drawbox( args ),
         _position = args.position,
         _screen   = args.screen,
@@ -569,7 +576,7 @@ capi.client.connect_signal( "unmanage",         update_panels_on_struts )
 panel.mt = {}
 
 function panel.mt:__call(...)
-    return new(...)
+    return constructor(...)
 end
 
 return setmetatable( panel, panel.mt )

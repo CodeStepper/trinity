@@ -75,45 +75,44 @@ Signal.long_setter = {
  *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
  *     args   Argumenty przekazane podczas tworzenia kontrolki.
 ]]-- ===========================================================================
-function Signal.initialize( object, manager )
-	object._signals = {}
+function Signal:initialize( manager )
+	self._signals = {}
 
-	if not object._bounds then
-		object._bounds  = { 0, 0, 0, 0, 0, 0 }
+	if not self.Bounds then
+		self.Bounds  = { 0, 0, 0, 0, 0, 0 }
 	end
 
-	object.add_signal        = Signal.add_signal
-	object.connect_signal    = Signal.connect_signal
-	object.multi_connect     = Signal.multi_connect
-	object.get_signals       = Signal.get_signals
-	object.disconnect_signal = Signal.disconnect_signal
-	object.emit_signal       = Signal.emit_signal
-	object.signal_emitter    = Signal.signal_emitter
-	object.emit_bounds       = Signal.emit_bounds
+	self.connect_signal    = Signal.connect_signal
+	self.multi_connect     = Signal.multi_connect
+	self.get_signals       = Signal.get_signals
+	self.disconnect_signal = Signal.disconnect_signal
+	self.emit_signal       = Signal.emit_signal
+	self.signal_emitter    = Signal.signal_emitter
+	self.emit_bounds       = Signal.emit_bounds
 	
 	-- obiekt będzie przechwytywał sygnały
 	if type(manager) == "table" then
-		object.register_signal = Signal.register_signal
+		self.register_signal = Signal.register_signal
 		
 		-- zmienne rejestracji elementów
-		object._mouse_regs  = {}
-		object._button_regs = {}
+		self._mouse_regs  = {}
+		self._button_regs = {}
 
 		for key, val in pairs(manager) do
 			if val == "mouse::move" then
-				object:connect_signal( "mouse::move",
+				self:connect_signal( "mouse::move",
 					Signal.move_emitter
 				)
 			elseif val == "mouse::leave" then
-				object:connect_signal( "mouse::leave",
+				self:connect_signal( "mouse::leave",
 					Signal.leave_emitter
 				)
 			elseif val == "button::press" then
-				object:connect_signal( "button::press",
+				self:connect_signal( "button::press",
 					Signal.press_emitter
 				)
 			elseif val == "button::release" then
-				object:connect_signal( "button::release",
+				self:connect_signal( "button::release",
 					Signal.release_emitter
 				)
 			end
@@ -121,18 +120,18 @@ function Signal.initialize( object, manager )
 
 	-- obiekt będzie zarządzał sygnałami
 	elseif manager then
-		object.signal_emitter   = nil
-		object.register_signal = Signal.register_signal
+		self.signal_emitter   = nil
+		self.register_signal = Signal.register_signal
 		
 		-- zmienne rejestracji elementów
-		object._mouse_regs  = {}
-		object._button_regs = {}
+		self._mouse_regs  = {}
+		self._button_regs = {}
 
 		-- przechwytywane zdarzenia do przetworzenia
-		object:connect_signal( "mouse::move", Signal.move_emitter )
-		object:connect_signal( "mouse::leave", Signal.leave_emitter )
-		object:connect_signal( "button::press", Signal.press_emitter )
-		object:connect_signal( "button::release", Signal.release_emitter )
+		self:connect_signal( "mouse::move", Signal.move_emitter )
+		self:connect_signal( "mouse::leave", Signal.leave_emitter )
+		self:connect_signal( "button::press", Signal.press_emitter )
+		self:connect_signal( "button::release", Signal.release_emitter )
 	end
 end
 
@@ -157,6 +156,15 @@ function Signal:connect_signal( name, func )
 	end
 
 	return self
+end
+
+function Signal:is_emitting( name )
+	-- _emitting[name] = true;
+
+	if self._emitting[name] then
+		return true
+	end
+	return false
 end
 
 function Signal:get_signals()
@@ -375,7 +383,7 @@ function Signal.move_emitter( object, x, y )
 	
 	-- sprawdzaj wszystkie zarejestrowane elementy
 	for key, val in pairs(object._mouse_regs) do
-		bds = key._bounds
+		bds = key.Bounds
 		
 		-- sprawdź czy mysz znajduje się na kontrolce
 		if x >= bds[1] and y <= bds[4] and x <= bds[3] and y >= bds[2] then
@@ -436,7 +444,7 @@ function Signal.press_emitter( object, x, y, button, mods )
 
 	-- sprawdzaj wszystkie zarejestrowane elementy
 	for key, val in pairs(object._button_regs) do
-		bds = key._bounds
+		bds = key.Bounds
 
 		-- sprawdź czy mysz znajduje się na kontrolce
 		if x >= bds[1] and y <= bds[4] and x <= bds[3] and y >= bds[2] then
@@ -460,7 +468,8 @@ function Signal.press_emitter( object, x, y, button, mods )
 				-- przechwytywanie ruchu myszy
 				if not capi.mgrabber.isrunning() then
 					capi.mgrabber.run( function(data)
-						-- pobierz koordynaty (wykrycie kliknięcia) i obiekt pod myszką
+						-- pobierz koordynaty (wykrycie kliknięcia)
+						-- oraz obiekt znajdujący się pod przyciskiem myszy
 						local ndata  = capi.mouse.coords()
 						local objup  = capi.mouse.object_under_pointer()
 						local key    = key
@@ -479,8 +488,11 @@ function Signal.press_emitter( object, x, y, button, mods )
 								pressobj.drawable:emit_signal( "mouse::enter" )
 							end
 							-- ruch po kontrolce
-							pressobj.drawable:emit_signal( "mouse::move",
-								data.x - mousedif.x, data.y - mousedif.y )
+							pressobj.drawable:emit_signal(
+								"mouse::move",
+								data.x - mousedif.x,
+								data.y - mousedif.y
+							)
 							inobject = true
 						end
 					
@@ -489,8 +501,12 @@ function Signal.press_emitter( object, x, y, button, mods )
 							-- emituj zdarzenie puszczenia klawisza myszy
 							-- kontrolka potraktuje to jako kliknięcie gdy val[4] = true
 							if pressobj == objup then
-								pressobj.drawable:emit_signal( "button::release",
-									data.x - mousedif.x, data.y - mousedif.y, button, mods )
+								pressobj.drawable:emit_signal(
+									"button::release",
+									data.x - mousedif.x,
+									data.y - mousedif.y,
+									button, mods
+								)
 							else
 								-- przycisk został puszczony na innym obiekcie
 								-- zresetuj val[4] - możliwość odebrania kliknięcia myszy
@@ -503,11 +519,11 @@ function Signal.press_emitter( object, x, y, button, mods )
 							return false
 						end
 						return true
-					end, "arrow" ) -- capi.mgrabber.run
-				end -- if not capi.mgrabber.isrunning
-			end -- if val[3] and button == 1
-		end -- if
-	end -- for
+					end, "arrow" )
+				end
+			end
+		end
+	end
 end
 
 --[[ Signal.release_emitter
@@ -529,7 +545,7 @@ function Signal.release_emitter( object, x, y, button, mods )
 
 	-- sprawdzaj wszystkie zarejestrowane elementy
 	for key, val in pairs(object._button_regs) do
-		bds = key._bounds
+		bds = key.Bounds
 
 		-- sprawdź czy mysz znajduje się na kontrolce
 		if x >= bds[1] and y <= bds[4] and x <= bds[3] and y >= bds[2] then
@@ -561,20 +577,20 @@ end
 
 function Signal:emit_bounds( gx, gy, gw, gh )
 	if gx ~= false then
-		self._bounds[1] = gx
+		self.Bounds[1] = gx
 	end
 	if gy ~= false then
-		self._bounds[2] = gy
+		self.Bounds[2] = gy
 	end
 	if gw ~= false then
-		self._bounds[5] = gw
+		self.Bounds[5] = gw
 	end
 	if gh ~= false then
-		self._bounds[6] = gh
+		self.Bounds[6] = gh
 	end
 
-	self._bounds[3] = self._bounds[1] + self._bounds[5]
-	self._bounds[4] = self._bounds[2] + self._bounds[6]
+	self.Bounds[3] = self.Bounds[1] + self.Bounds[5]
+	self.Bounds[4] = self.Bounds[2] + self.Bounds[6]
 end
 
 --[[ return

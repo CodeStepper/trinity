@@ -27,6 +27,7 @@ local Theme   = require("beautiful")
 local LGI     = require("lgi")
 local GColor  = require("gears.color")
 local Useful  = require("trinity.Useful")
+local Screen  = require("awful").screen
 local Visual  = {}
 
 -- Przyleganie poziome dla tekstu.
@@ -89,7 +90,7 @@ Visual.WRAP_TYPE = {
 
 -- metoda powiększania obrazka
 -- =============================================================================
-Visual.IMAGE_SIZE_TYPE = {
+Visual.IMAGE_SIZING_TYPE = {
 	Original = 1, -- rysuj w oryginalnych rozmiarach
 	Zoom     = 2, -- powiększaj lub pomniejszaj zachowując oryginalny format
 	Cover    = 3, -- przykryj całą kontrolkę zachowując oryginalny format
@@ -111,11 +112,11 @@ Visual.IMAGE_EXTEND_TYPE = {
  * DESCRIPTION:
  *     Lista grup i argumentów możliwych do stylizacji:
  *         - background
- *             - back_color - kolor kontrolki
+ *             - background - kolor kontrolki
  *         - image
- *             - back_image - obraz w tle kontrolki
+ *             - image - obraz w tle kontrolki
  *             - image_align - przyleganie obrazu do wybranej krawędzi
- *             - image_size - powiększanie obrazu
+ *             - image_sizing - powiększanie obrazu
  *             - image_extend - uzupełnianie pustej przestrzeni
  *         - padding
  *             - padding - margines wewnętrzny
@@ -136,143 +137,166 @@ Visual.IMAGE_EXTEND_TYPE = {
  *     groups Grupy do stylizacji do których kontrolka może mieć dostęp.
  *     args   Argumenty przekazane podczas tworzenia kontrolki.
 ]]-- ===========================================================================
-function Visual.initialize( widget, groups, args )
+function Visual:initialize( groups, args )
 	local group = {}
 	local index = 0
 
-	if widget._vinited then
+	if self._V then
 		return
 	end
-	if not widget._bounds then
-		widget._bounds = { 0, 0, 0, 0, 0, 0 }
+	-- informacje o otoczeniu kontrolki
+	if not self.Bounds then
+		self.Bounds = { 0, 0, 0, 0, 0, 0 }
+	end
+	if not self._Screen then
+		self._Screen = 1
 	end
 
-	-- ustawienia ramki
-	widget._border = {
-		size    = { 0, 0, 0, 0 },
-		color   = nil,
-		visible = false
+	-- mnożnik DPI, domyślnie 96 = 1.0
+	if not Visual.DPIFactor then
+		Visual.DPIFactor = {}
+		Screen.connect_for_each_screen( function(s)
+			idx = s.index
+			Visual.DPIFactor[idx] = Theme.xresources.get_dpi( idx ) / 96
+		end )
+	end
+
+	-- tablica z ustawieniami wizualnymi kontrolki
+	self.V = {
+		-- dane na temat ramki
+		BOR = {
+			Width   = { 0, 0, 0, 0 },
+			Color   = nil,
+			Visible = false
+		},
+
+		-- dane obrazka
+		IMG = {
+			Surface = nil,
+			Extend  = "NONE",
+			Sizing  = 2,
+			HAlign  = 2,
+			VAlign  = 2,
+			Dims    = { 0, 0 },
+			SFactor = { 1.0, 1.0 },
+			Scaled  = { 0, 0 }
+		},
+
+		-- informacje o tekście
+		TXT = {
+			HAlign  = 2,
+			VAlign  = "LEFT",
+			Font    = nil,
+			LHeight = 0,
+			Color   = nil,
+			Cairo   = nil
+		},
+
+		Padding    = { 0, 0, 0, 0 },
+		Background = nil,
+
+		-- oryginalne wartości przed skalowaniem na DPI
+		OV = {
+			BOR_Width   = { 0, 0, 0, 0 },
+			Padding     = { 0, 0, 0, 0 },
+			TXT_LHeight = 0
+		}
 	}
-	widget._image = {
-		surface = nil,
-		extend  = 1,
-		size    = 2,
-		halign  = 2,
-		valign  = 2,
-		dims    = { 0, 0 },
-		scale   = { 0, 0 },
-		scaledv = { 0, 0 }
-	}
-	-- ustawienia tekstu
-	widget._text = {
-		valign  = "LEFT",
-		halign  = 2,
-		font    = nil,
-		lheight = 0,
-		color   = nil
-	}
-	
-	-- utwórz zmienne
-	widget._vinited = true
-	widget._padding = { 0, 0, 0, 0 }
-	widget._bgcolor = nil
 
 	-- wspólne funkcje
-	widget.get_inner_bounds = Visual.get_inner_bounds
-	widget.draw_visual      = Visual.draw_visual
+	self.get_inner_bounds = Visual.get_inner_bounds
+	self.draw_visual      = Visual.draw_visual
 
 	-- rozpoznaj style grupy
-	for key, val in pairs(groups) do
+	for key, val in ipairs(groups) do
 		group[val] = true
 	end
 	
 	-- kolor tła
 	if group.background then
-		widget.set_background = Visual.set_background
-		widget:set_background( args.back_color, false )
+		self.set_background = Visual.set_background
+		self:set_background( args.background, false )
 	end
+
 	-- obrazek w tle
 	if group.image then
-		widget.set_image        = Visual.set_image
-		widget.set_image_align  = Visual.set_image_align
-		widget.set_image_size   = Visual.set_image_size
-		widget.set_image_extend = Visual.set_image_extend
-		widget.calc_image_scale = Visual.calc_image_scale
+		self.set_image        = Visual.set_image
+		self.set_image_align  = Visual.set_image_align
+		self.set_image_sizing = Visual.set_image_sizing
+		self.set_image_extend = Visual.set_image_extend
+		self.calc_image_scale = Visual.calc_image_scale
 
-		widget:set_image( args.back_image, false )
-			:set_image_align( args.image_align or "Center", false )
-			:set_image_size( args.image_size or "Zoom", false )
-			:set_image_extend( args.image_extend or "None", false )
+		self:set_image       ( args.image,                    false )
+			:set_image_align ( args.image_align  or "Center", false )
+			:set_image_sizing( args.image_sizing or "Zoom",   false )
+			:set_image_extend( args.image_extend or "None",   false )
 	end
 	-- wcięcie
 	if group.padding then
-		widget.set_padding = Visual.set_padding
-		widget:set_padding( args.padding or 0, false )
+		self.set_padding = Visual.set_padding
+		self:set_padding( args.padding or 0, false )
 	end
 	-- ramka
 	if group.border then
-		widget.set_border_size  = Visual.set_border_size
-		widget.set_border_color = Visual.set_border_color
+		self.set_border_width = Visual.set_border_width
+		self.set_border_color = Visual.set_border_color
 
-		widget:set_border_size( args.border_size or 0, false )
-			:set_border_color( args.border_color, false )
+		self:set_border_width( args.border_width or 0, false )
+			:set_border_color( args.border_color,      false )
 	end
 	-- kolor czcionki
-	-- na pierwszy rzut oka może wydawać się nielogiczne oddzielanie koloru
-	-- czionki od samej czcionki, jednak kolor czcionki jest dziedziczony
-	-- np. układ może mieć możliwość ustawienia koloru czcionki ale nie tekstu
+	-- układ może mieć możliwość ustawienia koloru czcionki ale nie tekstu
 	if group.foreground then
-		widget.set_foreground = Visual.set_foreground
-		widget:set_foreground( args.foreground, false )
+		self.set_foreground = Visual.set_foreground
+		self:set_foreground( args.foreground, false )
 	end
 	-- tekst
 	if group.text then
-		-- tworzenie obiektu tekstu
-		if widget._cairo_layout == nil then
-			widget._cairo_layout = LGI.Pango.Layout.new(
-				LGI.PangoCairo.font_map_get_default():create_context()
-			)
-		end
+		self.V.TXT.Cairo = LGI.Pango.Layout.new(
+			LGI.PangoCairo.font_map_get_default():create_context()
+		)
 
-		widget.set_text       = Visual.set_text
-		widget.set_markup     = Visual.set_markup
-		widget.set_font       = Visual.set_font
-		widget.set_ellipsize  = Visual.set_ellipsize
-		widget.set_text_align = Visual.set_text_align
-		widget.set_wrap       = Visual.set_wrap
-		widget.draw_text      = Visual.draw_text
-		widget.calc_text_dims = Visual.calc_text_dims
+		self.set_text       = Visual.set_text
+		self.set_markup     = Visual.set_markup
+		self.set_font       = Visual.set_font
+		self.set_ellipsize  = Visual.set_ellipsize
+		self.set_text_align = Visual.set_text_align
+		self.set_wrap       = Visual.set_wrap
+		self.draw_text      = Visual.draw_text
+		self.calc_text_dims = Visual.calc_text_dims
 
-		widget:set_font( args.font, false )
-			:set_ellipsize( args.ellipsize  or "None", false )
-			:set_text_align( args.text_align or "Left", false )
-			:set_wrap( args.wrap or "WordChar", false )
+		self:set_font      ( args.font,                     false )
+			:set_ellipsize ( args.ellipsize  or "None",     false )
+			:set_text_align( args.text_align or "Left",     false )
+			:set_wrap      ( args.wrap       or "WordChar", false )
 
-		if type(args.markup) == "string" then
-			widget:set_markup( args.markup, false )
-		elseif type(args.text) == "string" then
-			widget:set_text( args.text, false )
+		if args.markup then
+			self:set_markup( args.markup, false )
+		elseif args.text then
+			self:set_text( args.text, false )
 		end
 	end
-	return widget
+	return self
 end
 
 --[[
  * Rysuje oprawę wizualną kontrolki używając biblioteki Cairo.
  *
  * PARAMETERS:
- *     widget Element do rysowania [automat].
- *     cr     Obiekt Cairo.
+ *     cr Obiekt Cairo.
 ]]-- ===========================================================================
-function Visual.draw_visual( widget, cr )
-	if  not widget._border.visible and
-		not widget._bgcolor and
-		not widget._image.surface then
+function Visual:draw_visual( cr )
+	if  not self.V.BOR.Visible and
+		not self.V.Background and
+		not self.V.IMG.Surface then
 		return
 	end
 
-	local px, py = widget._bounds[1], widget._bounds[2]
-	local width, height = widget._bounds[5], widget._bounds[6]
+	local px, py, width, height =
+		self.Bounds[1],
+		self.Bounds[2],
+		self.Bounds[5],
+		self.Bounds[6]
 
 	-- nie rysuj gdy wymiary są zerowe
 	if width <= 0 or height <= 0 then
@@ -282,67 +306,67 @@ function Visual.draw_visual( widget, cr )
 	cr:save()
 	
 	-- tło w kolorze
-	if widget._bgcolor then
-		cr:set_source( widget._bgcolor )
+	if self.V.Background then
+		cr:set_source( self.V.Background )
 
 		cr:rectangle( px, py, width, height )
 		cr:fill()
 	end
 
 	-- obraz w tle
-	if widget._image.surface then
+	if self.V.IMG.Surface then
 		local offx, offy = 0, 0
 
 		-- przyleganie poziome
-		if widget._image.halign ~= 1 then
-			offx = width - widget._image.scaledv[1]
-			if widget._image.halign == 2 then
+		if self.V.IMG.HAlign ~= 1 then
+			offx = width - self.V.IMG.Scaled[1]
+			if self.V.IMG.HAlign == 2 then
 				offx = offx / 2
 			end
 		end
 		-- przyleganie pionowe
-		if widget._image.valign ~= 1 then
-			offy = height - widget._image.scaledv[2]
-			if widget._image.valign == 2 then
+		if self.V.IMG.VAlign ~= 1 then
+			offy = height - self.V.IMG.Scaled[2]
+			if self.V.IMG.VAlign == 2 then
 				offy = offy / 2
 			end
 		end
 
 		-- skalowanie obrazu
-		if widget._image.size ~= 1 then
-			cr:scale( widget._image.scale[1], widget._image.scale[2] )
+		if self.V.IMG.Sizing ~= 1 then
+			cr:scale( self.V.IMG.SFactor[1], self.V.IMG.SFactor[2] )
 
 			cr:set_source_surface(
-				widget._image.surface,
-				(px + offx) / widget._image.scale[1],
-				(py + offy) / widget._image.scale[2]
+				self.V.IMG.Surface,
+				(px + offx) / self.V.IMG.SFactor[1],
+				(py + offy) / self.V.IMG.SFactor[2]
 			)
 			cr:rectangle(
-				px / widget._image.scale[1],
-				py / widget._image.scale[2],
-				width / widget._image.scale[1],
-				height / widget._image.scale[2]
+				px / self.V.IMG.SFactor[1],
+				py / self.V.IMG.SFactor[2],
+				width / self.V.IMG.SFactor[1],
+				height / self.V.IMG.SFactor[2]
 			)
 			cr:clip()
 		-- obraz w oryginale
 		else
-			cr:set_source_surface( widget._image.surface, px + offx, py + offy )
+			cr:set_source_surface( self.V.IMG.Surface, px + offx, py + offy )
 			cr:rectangle( px, py, width, height )
 			cr:clip()
 		end
 
 		-- uzupełnianie pustej przestrzeni
 		LGI.cairo.Pattern.set_extend(
-			cr:get_source(), LGI.cairo.Extend[widget._image.extend]
+			cr:get_source(), LGI.cairo.Extend[self.V.IMG.Extend]
 		)
 
 		cr:paint()
 	end
 
 	-- sprawdź czy na pewno trzeba rysować ramkę
-	if widget._border.visible then
-		local size = widget._border.size
-		cr:set_source( widget._border.color )
+	if self.V.BOR.Visible then
+		local size = self.V.BOR.Width
+		cr:set_source( self._B.BOR.Color )
 
 		-- lewo (od góry do dołu)
 		if size[1] then
@@ -386,15 +410,12 @@ end
 --[[
  * Oblicza wymiary kontrolki po uwzględnieniu wielkości ramki i wcięcia.
  *
- * PARAMETERS:
- *     widget Element którego wymiary mają być obliczone [automat].
- *
  * RETURNS:
  *     Pozycję X, Y, szerokość i wysokość kontrolki.
 ]]-- ===========================================================================
-function Visual.get_inner_bounds( widget )
-	local padding = widget._padding
-	local bounds  = widget._bounds
+function Visual:get_inner_bounds()
+	local padding = self.V.Padding
+	local bounds  = self.Bounds
 	
 	-- zwróć nowe wymiary i współrzędne x,y
 	return bounds[1] + padding[1],
@@ -436,14 +457,13 @@ end
  *     widget:set_padding( {2, 4, 6, 8} )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     padding Wewnętrzny margines elementu.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_padding( widget, padding, refresh )
+function Visual:set_padding( padding, refresh )
 	size = (type(size) == "number" or type(size) == "table")
 		and size
 		or  0
@@ -459,21 +479,29 @@ function Visual.set_padding( widget, padding, refresh )
 		padding = { 0, 0, 0, 0 }
 	end
 	
-	local obsize = widget._border.size
+	local obsize = self.V.OV.BOR_Width
 
 	-- zapisz wcięcie z uwzględnieniem ramki
-	widget._padding = {
+	self.V.OV.Padding = {
 		padding[1] + obsize[1],
 		padding[2] + obsize[2],
 		padding[3] + obsize[3],
 		padding[4] + obsize[4]
 	}
-	
+	-- rzeczywiste wcięcie
+	local dpifactor = Visual.DPIFactor[self._Screen]
+	self.V.Padding = {
+		self.V.OV.Padding[1] * dpifactor,
+		self.V.OV.Padding[2] * dpifactor,
+		self.V.OV.Padding[3] * dpifactor,
+		self.V.OV.Padding[4] * dpifactor
+	}
+
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 -- /////////////////////////////////////////////////////////////////////////////
@@ -504,22 +532,21 @@ end
  *     })
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     color   Kolor elementu.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_background( widget, color, refresh )
-	widget._bgcolor = color
+function Visual:set_background( color, refresh )
+	self.V.Background = color
 		and GColor( color )
 		or  nil
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 -- /////////////////////////////////////////////////////////////////////////////
@@ -538,39 +565,39 @@ end
  *     widget:set_image( "/home/user/images/sample.jpg" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     image   Ścieżka do obrazka lub obiekt Surface.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_image( widget, image, refresh )
+function Visual:set_image( image, refresh )
 	-- ściezka do obrazka - załaduj obrazek
 	if type(image) == "string" then
 		image = Useful.load_image( image )
 	end
 	if image == nil then
-		widget._image.dims    = { 0, 0 }
-		widget._image.scale   = { 0, 0 }
-		widget._image.scaledv = { 0, 0 }
-		widget._image.surface = nil
+		self.V.IMG.Dims    = { 0, 0 }
+		self.V.IMG.SFactor = { 0, 0 }
+		self.V.IMG.Scaled  = { 0, 0 }
+		self.V.IMG.Surface = nil
 
-		return widget
+		return self
 	end
+	local factor = Visual.DPIFactor[self._Screen]
 
 	-- zapisz wymiary obrazka
-	widget._image.dims    = { image.width, image.height }
-	widget._image.scale   = { image.width, image.height }
-	widget._image.scaledv = { image.width, image.height }
-	widget._image.surface = image
+	self.V.IMG.Dims    = { image.width, image.height }
+	self.V.IMG.SFactor = { 1.0, 1.0 }
+	self.V.IMG_Scaled  = { image.width * factor, image.height * factor }
+	self.V.IMG.Surface = image
 
 	-- wyślij sygnał aktualizacji elementu
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -585,54 +612,52 @@ end
  *     widget:set_image_align( "BottomRight" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     align   Typ przylegania obrazu w tle do kontrolki.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
- * RETURNS:
+ * RETURNS:e
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_image_align( widget, align, refresh )
+function Visual:set_image_align( align, refresh )
 	if not align or not Visual.ALIGN_TYPE[align] then
-		return widget
+		return self
 	end
 	local aligntype = Visual.ALIGN_TYPE[align]
 
-	widget._image.valign = Visual.IMAGE_ALIGN[aligntype & 0x07] or 1
-	widget._image.halign = Visual.IMAGE_ALIGN[aligntype & 0x70] or 1
+	self.V.IMG.VAlign =  Visual.IMAGE_ALIGN[aligntype & 0x07] or 1
+	self.V.IMG.HAlign = (Visual.IMAGE_ALIGN[aligntype & 0x70] or 0x10) >> 4
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
  * Ustawia typ rozciągania obrazu w tle kontrolki.
  *
  * DESCRIPTION:
- *     Jako argument funkcja przyjmuje jedną z wartości Visual.IMAGE_SIZE_TYPE.
+ *     Funkcja przyjmuje w argumencie jedną z wartości Visual.IMAGE_SIZING_TYPE.
  *     Niezależnie od ustawienia obraz jest obcinany jeżeli wychodzi poza
  *     granice wymiarów kontrolki.
  *
  * CODE:
- *     widget:set_image_size( "Contains" )
+ *     widget:set_image_sizing( "Contains" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     size    Typ rozciągania obrazu w tle kontrolki.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_image_size( widget, size, refresh )
-	widget._image.size = Visual.IMAGE_SIZE_TYPE[size] or "Zoom"
+function Visual:set_image_sizing( size, refresh )
+	self.V.IMG.Sizing = Visual.IMAGE_SIZING_TYPE[size] or "Zoom"
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -648,77 +673,76 @@ end
  *     widget:set_image_extend( "Reflect" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     extend  Typ powtarzania obrazu w tle kontrolki.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_image_extend( widget, extend, refresh )
-	widget._image.extend = Visual.IMAGE_EXTEND_TYPE[extend] or "None"
+function Visual:set_image_extend( extend, refresh )
+	self.V.IMG.Extend = Visual.IMAGE_EXTEND_TYPE[extend] or "NONE"
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
  * Oblicza wymiary obrazka w tle z zastosowaniem wybranego skalowania.
  *
  * PARAMETERS:
- *     widget Element do rysowania [automat].
  *     width  Szerokość do wykorzystania lub -1.
  *     height Wysokość do wykorzystania lub -1.
  *
  * RETURNS:
  *     Szerokość i wysokość obrazka po przeskalowaniu.
 ]]-- ===========================================================================
-function Visual.calc_image_scale( widget, width, height )
+function Visual:calc_image_scale( width, height )
 	local new_width  = width
 	local new_height = height
+	local factor     = Visual.DPIFactor[self._Screen]
 	
 	-- resetuj ustawienia skalowania
-	widget._image.scale   = { 1.0, 1.0 }
-	widget._image.scaledv = {
-		widget._image.dims[1],
-		widget._image.dims[2]
+	self.V.IMG.SFactor   = { 1.0, 1.0 }
+	self.V.IMG.Scaled = {
+		self.V.IMG.Dims[1] * factor,
+		self.V.IMG.Dims[2] * factor
 	}
 
 	-- wymiary mniejsze lub równe zero lub format ma pozostać bez zmiany
-	if width <= 0 or height <= 0 or widget._image.size == 1 then
-		return widget._image.dims
+	if width <= 0 or height <= 0 or self.V.IMG.Sizing == 1 then
+		return self.V.IMG.Dims
 	end
 
-	local scalew = width / widget._image.dims[1]
-	local scaleh = height / widget._image.dims[2]
+	local scalew = width / self.V.IMG.Dims[1]
+	local scaleh = height / self.V.IMG.Dims[2]
 
 	-- powiększanie lub pomniejszanie z uwzględnieniem formatu
-	if widget._image.size == 2 then
+	if self.V.IMG.Sizing == 2 then
 		if scalew > scaleh then
-			widget._image.scale = { scaleh, scaleh }
+			self.V.IMG.SFactor = { scaleh, scaleh }
 		else
-			widget._image.scale = { scalew, scalew }
+			self.V.IMG.SFactor = { scalew, scalew }
 		end
 	-- nakrywanie kontrolki z uwzględnieniem formatu
-	elseif widget._image.size == 3 then
+	elseif self.V.IMG.Sizing == 3 then
 		if scalew > scaleh then
-			widget._image.scale = { scalew, scalew }
+			self.V.IMG.SFactor = { scalew, scalew }
 		else
-			widget._image.scale = { scaleh, scaleh }
+			self.V.IMG.SFactor = { scaleh, scaleh }
 		end
 	-- rozciąganie obrazka na całą kontrolkę
 	else
-		widget._image.scale = { scalew, scaleh }
+		self.V.IMG.SFactor = { scalew, scaleh }
 	end
 
-	widget._image.scaledv = {
-		widget._image.dims[1] * widget._image.scale[1],
-		widget._image.dims[2] * widget._image.scale[2]
+	self.V.IMG.Scaled = {
+		self.V.IMG.Dims[1] * self.V.IMG.SFactor[1],
+		self.V.IMG.Dims[2] * self.V.IMG.SFactor[2]
 	}
 
-	return widget._image.scaledv[1], widget._image.scaledv[2]
+	return self.V.IMG.Scaled[1], self.V.IMG.Scaled[2]
 end
 
 -- /////////////////////////////////////////////////////////////////////////////
@@ -737,22 +761,21 @@ end
  *     widget:set_foreground( "#0125AA" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     color   Kolor czcionki tekstu w elemencie.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_foreground( widget, color, refresh )
-	widget._text.color = color
+function Visual:set_foreground( color, refresh )
+	self.V.TXT.Color = color
 		and GColor( color )
 		or  nil
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 -- /////////////////////////////////////////////////////////////////////////////
@@ -776,66 +799,84 @@ end
  *     każdej strony kontrolki.
  *
  * CODE:
- *     widget:set_border_size( 5 )
- *     widget:set_border_size( {5, 2} )
- *     widget:set_border_size( {1, 4, 5, 2} )
+ *     widget:set_border_width( 5 )
+ *     widget:set_border_width( {5, 2} )
+ *     widget:set_border_width( {1, 4, 5, 2} )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     size    Rozmiar ramki w postaci cyfry lub tablicy cyfr.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_border_size( widget, size, refresh )
+function Visual:set_border_width( size, refresh )
 	size = (type(size) == "number" or type(size) == "table")
 		and size
 		or  0
 
 	-- stary rozmiar ramki
 	local obsize = {
-		widget._border.size[1],
-		widget._border.size[2],
-		widget._border.size[3],
-		widget._border.size[4]
+		self.V.OV.BOR_Width[1],
+		self.V.OV.BOR_Width[2],
+		self.V.OV.BOR_Width[3],
+		self.V.OV.BOR_Width[4]
 	}
 	-- aktualne wcięcie
-	local owpadd = widget._padding
+	local owpadd = self.V.OV.Padding
 	
 	-- cała ramka ma taką samą grubość
 	if type(size) == "number" then
-		widget._border.size = { size, size, size, size }
+		self.V.OV.BOR_Width = { size, size, size, size }
 	-- z dwóch wartości tworzy 2 grupy - lewo=prawo, góra=dół
 	elseif #size == 2 then
-		widget._border.size = { size[1], size[2], size[1], size[2] }
+		self.V.OV.BOR_Width = { size[1], size[2], size[1], size[2] }
 	-- każdy bok może mieć inną długość
 	elseif #size == 4 then
-		widget._border.size = { size[1], size[2], size[3], size[4] }
+		self.V.OV.BOR_Width = { size[1], size[2], size[3], size[4] }
 	else
-		widget._border.size = { 0, 0, 0, 0 }
+		self.V.OV.BOR_Width = { 0, 0, 0, 0 }
 	end
 	
 	-- przelicz ponownie wcięcia
-	widget._padding = {
-		owpadd[1] - obsize[1] + widget._border.size[1],
-		owpadd[2] - obsize[2] + widget._border.size[2],
-		owpadd[3] - obsize[3] + widget._border.size[3],
-		owpadd[4] - obsize[4] + widget._border.size[4]
+	self.V.OV.Padding = {
+		owpadd[1] - obsize[1] + self.V.OV.BOR_Width[1],
+		owpadd[2] - obsize[2] + self.V.OV.BOR_Width[2],
+		owpadd[3] - obsize[3] + self.V.OV.BOR_Width[3],
+		owpadd[4] - obsize[4] + self.V.OV.BOR_Width[4]
 	}
 	
 	-- sprawdź czy ramka będzie rysowana
-	if (widget._border.size[1] > 0 or widget._border.size[2] > 0 or
-		widget._border.size[3] > 0 or widget._border.size[4] > 0) and
-		widget._border.color then
-		widget._border.visible = true
+	if (self.V.OV.BOR_Width[1] > 0 or self.V.OV.BOR_Width[2] > 0 or
+		self.V.OV.BOR_Width[3] > 0 or self.V.OV.BOR_Width[4] > 0) and
+		self.V.BOR.Color
+	then
+		self.V.BOR.Visible = true
+	else
+		self.V.BOR.Visible = false
 	end
 
+	local dpifactor = Visual.DPIFactor[self._Screen]
+
+	-- wartości po uwzględnieniu DPI
+	self.V.Padding = {
+		self.V.OV.Padding[1] * dpifactor,
+		self.V.OV.Padding[2] * dpifactor,
+		self.V.OV.Padding[3] * dpifactor,
+		self.V.OV.Padding[4] * dpifactor
+	}
+	self.V.BOR.Width = {
+		self.V.OV.BOR_Width[1] * dpifactor,
+		self.V.OV.BOR_Width[2] * dpifactor,
+		self.V.OV.BOR_Width[3] * dpifactor,
+		self.V.OV.BOR_Width[4] * dpifactor
+	}
+
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -852,31 +893,31 @@ end
  *     widget:set_border_color( "#0125AA" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     color   Kolor ramki elementu.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_border_color( widget, color, refresh )
-	widget._border.visible = false
-	widget._border.color   = color
+function Visual:set_border_color( color, refresh )
+	self.V.BOR.Visible = false
+	self.V.BOR.Color   = color
 		and GColor( color )
 		or  nil
 	
 	-- sprawdź czy ramka będzie rysowana
-	if (widget._border.size[1] > 0 or widget._border.size[2] > 0 or
-		widget._border.size[3] > 0 or widget._border.size[4] > 0) and
-		widget._border.color then
-		widget._border.visible = true
+	if (self.V.BOR.Width[1] > 0 or self.V.BOR.Width[2] > 0 or
+		self.V.BOR.Width[3] > 0 or self.V.BOR.Width[4] > 0) and
+		self._B.BOR.Color
+	then
+		self.V.BOR.Visible = true
 	end
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 -- /////////////////////////////////////////////////////////////////////////////
@@ -890,26 +931,25 @@ end
  *     widget:set_text( "Example" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     text    Tekst do wyświetlenia.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_text( widget, text, refresh )
-	if widget._cairo_layout.text == text then
-		return widget
+function Visual:set_text( text, refresh )
+	if self.V.TXT.Cairo.text == text then
+		return self
 	end
 
-	widget._cairo_layout.text       = text         
-	widget._cairo_layout.attributes = nil
+	self.V.TXT.Cairo.text       = text         
+	self.V.TXT.Cairo.attributes = nil
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -924,31 +964,30 @@ end
  *     widget:set_markup( "<b>E</b><s>x</s>am<i>ple</i>" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     text    Tekst do wyświetlenia.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_markup( widget, text, refresh )
+function Visual:set_markup( text, refresh )
 	local attr, parsed = Pango.parse_markup( text, -1, 0 )
 	if not attr then
 		error( parsed )
 	end
 
-	if widget._cairo_layout.text == parsed then
-		return widget
+	if self.V.TXT.Cairo.text == parsed then
+		return self
 	end
 
-	widget._cairo_layout.text       = parsed
-	widget._cairo_layout.attributes = attr
+	self.V.TXT.Cairo.text       = parsed
+	self.V.TXT.Cairo.attributes = attr
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -971,36 +1010,35 @@ end
  *     widget:set_font( Useful.GetFontDescription("DJV8") )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     font    Czcionka do ustawienia podczas wyświetlania tekstu.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_font( widget, font, refresh )
+function Visual:set_font( font, refresh )
 	local fobj = type(font) ~= "userdata"
 		and Theme.get_font(font)
 		or  font
 
-	widget._cairo_layout:set_font_description( fobj )
+	self.V.TXT.Cairo:set_font_description( fobj )
 	
 	-- wymiary do sprawdzenia (-1 - nieokreślone)
-	widget._cairo_layout.width  = LGI.Pango.units_from_double( -1 )
-	widget._cairo_layout.height = LGI.Pango.units_from_double( -1 )
+	self.V.TXT.Cairo.width  = LGI.Pango.units_from_double( -1 )
+	self.V.TXT.Cairo.height = LGI.Pango.units_from_double( -1 )
 	
 	-- pobierz wymiary tekstu
-	local ink, logical = widget._cairo_layout:get_pixel_extents()
+	local ink, logical = self.V.TXT.Cairo:get_pixel_extents()
 	
 	-- zapisz wysokość linii tekstu
-	widget._text.lheight = logical.height
-	widget._text.font    = fobj
+	self.V.TXT.LHeight = logical.height
+	self.V.TXT.Font    = fobj
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -1015,20 +1053,19 @@ end
  *     widget:set_ellipsizeType( "Middle" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     type    Jedna z metod wstawiania trzykropka w zdaniu.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_ellipsize( widget, type, refresh )
-	widget._cairo_layout:set_ellipsize( Visual.ELLIPSIZE_TYPE[type] or "END" )
+function Visual:set_ellipsize( type, refresh )
+	self.V.TXT.Cairo:set_ellipsize( Visual.ELLIPSIZE_TYPE[type] or "END" )
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -1042,27 +1079,26 @@ end
  *     widget:set_text_align( "BottomRight" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     color   Typ przylegania tekstu w kontrolce.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_text_align( widget, align, refresh )
+function Visual:set_text_align( align, refresh )
 	if align == nil or Visual.ALIGN_TYPE[align] == nil then
 		return
 	end
 	local aligntype = Visual.ALIGN_TYPE[align]
 
-	widget._text.valign = Visual.TEXT_ALIGN[aligntype & 0x07] or 2
-	widget._text.halign = Visual.TEXT_ALIGN[aligntype & 0x70] or "LEFT"
-	widget._cairo_layout:set_alignment( widget._text.halign )
+	self.V.TXT.VAlign = Visual.TEXT_ALIGN[aligntype & 0x07] or 2
+	self.V.TXT.HAlign = Visual.TEXT_ALIGN[aligntype & 0x70] or "LEFT"
+	self.V.TXT.Cairo:set_alignment( self.V.TXT.HAlign )
 
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -1077,22 +1113,21 @@ end
  *     widget:set_wrap( "WrapChar" )
  *
  * PARAMETERS:
- *     widget  Element do stylizacji [automat].
  *     wrap    Typ zawijania tekstu w kontrolce.
  *     refresh Czy emitować sygnał o odświeżeniu wyglądu kontrolki?
  *
  * RETURNS:
  *     Obiekt kontrolki.
 ]]-- ===========================================================================
-function Visual.set_wrap( widget, wrap, refresh )
-	widget._cairo_layout:set_wrap( Visual.WRAP_TYPE[wrap] or "WORD_CHAR" )
+function Visual:set_wrap( wrap, refresh )
+	self.V.TXT.Cairo:set_wrap( Visual.WRAP_TYPE[wrap] or "WORD_CHAR" )
 
 	-- wyślij sygnał aktualizacji elementu
 	if refresh == nil or refresh then
-		widget:emit_signal( "widget::resized" )
-		widget:emit_signal( "widget::updated" )
+		self:emit_signal( "widget::resized" )
+		self:emit_signal( "widget::updated" )
 	end
-	return widget
+	return self
 end
 
 --[[
@@ -1102,34 +1137,33 @@ end
  *     widget:set_text_align( "BottomRight" )
  *
  * PARAMETERS:
- *     widget Element do rysowania [automat].
- *     cr     Obiekt Cairo.
+ *     cr Obiekt Cairo.
 ]]-- ===========================================================================
-function Visual.draw_text( widget, cr )
+function Visual:draw_text( cr )
 	-- pobierz krawędzie kontrolki
-	local x, y, width, height = widget:get_inner_bounds()
+	local x, y, width, height = self:get_inner_bounds()
 
 	-- przesunięcie w pionie
 	local offset = y
 
 	-- oblicz przyleganie pionowe
-	if height ~= widget._text.lheight then
-		if widget._text.valign == 2 then
-			offset = y + ((height - widget._text.lheight) / 2)
-		elseif widget._text.valign == 3 then
-			offset = y + height - widget._text.lheight
+	if height ~= self.V.TXT.LHeight then
+		if self.V.TXT.VAlign == 2 then
+			offset = y + ((height - self.V.TXT.LHeight) / 2)
+		elseif self.V.TXT.VAlign == 3 then
+			offset = y + height - self.V.TXT.LHeight
 		end
 	end
 	
 	cr:move_to( x, offset )
 	
-	if widget._text.color then
+	if self.V.TXT.Color then
 		cr:save()
-		cr:set_source( widget._text.color )
-		cr:show_layout( widget._cairo_layout )
+		cr:set_source( self.V.TXT.Color )
+		cr:show_layout( self.V.TXT.Cairo )
 		cr:restore()
 	else
-		cr:show_layout( widget._cairo_layout )
+		cr:show_layout( self.V.TXT.Cairo )
 	end
 end
 
@@ -1137,21 +1171,20 @@ end
  * Oblicza wymiary pola tekstowego.
  *
  * PARAMETERS:
- *     widget Element do obliczenia wymiarów [automat].
  *     width  Szerokość do wykorzystania lub -1.
  *     height Wysokość do wykorzystania lub -1.
  *
  * RETURNS:
  *     Szerokość i wysokość pola tekstowego w kontrolce.
 ]]-- ===========================================================================
-function Visual.calc_text_dims( widget, width, height )
+function Visual:calc_text_dims( width, height )
 	-- przelicz jednostki
-	widget._cairo_layout.width  = LGI.Pango.units_from_double( width )
-	widget._cairo_layout.height = LGI.Pango.units_from_double( height )
+	self.V.TXT.Cairo.width  = LGI.Pango.units_from_double( width )
+	self.V.TXT.Cairo.height = LGI.Pango.units_from_double( height )
 	
 	-- pobierz wymiary tekstu
-	local ink, logical = widget._cairo_layout:get_pixel_extents()
-	widget._text.lheight = logical.height
+	local ink, logical = self.V.TXT.Cairo:get_pixel_extents()
+	self.V.TXT.LHeight = logical.height
 	
 	-- zwróć wymiary
 	return logical.width, logical.height

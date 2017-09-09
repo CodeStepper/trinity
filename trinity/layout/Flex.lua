@@ -160,9 +160,9 @@ end
 
 function Flex:fit( width, height )
 	local new_width, new_height = -1, -1
-	local temp   = self._padding
+	local temp   = self.V.Padding
 	local px, py = temp[1], temp[2]
-	local bounds = self._bounds
+	local bounds = self.Bounds
 
 	-- rozmieszczenie poziome
 	if self._direction == "x" then
@@ -223,7 +223,9 @@ end
 -- =================================================================================================
 
 function Flex:add( widget, emiter )
-	table.insert( self._widgets, widget )    
+	table.insert( self._widgets, widget )
+
+	widget._parent = self
 	
 	widget:connect_signal( "widget::updated", self.emit_updated )
 	widget:connect_signal( "widget::resized", self.emit_resized )

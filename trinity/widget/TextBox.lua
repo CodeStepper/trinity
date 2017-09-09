@@ -58,8 +58,8 @@ end
 ========================================================================================== ]]
 
 function TextBox:draw( cr )
-	local px, py = self._bounds[1], self._bounds[2]
-	local width, height = self._bounds[5], self._bounds[6]
+	local px, py = self.Bounds[1], self.Bounds[2]
+	local width, height = self.Bounds[5], self.Bounds[6]
 
 	-- nie rysuj gdy wymiary są zerowe...
 	if width == 0 or height == 0 then
@@ -75,8 +75,8 @@ function TextBox:draw( cr )
 		cr:save()
 		
 		-- oblicz pozycje
-		sx = px + self._padding[1] + (self._monospace_dim[1] * self._caret_pos)
-		sy = py + self._padding[2]
+		sx = px + self.V.Padding[1] + (self._monospace_dim[1] * self._caret_pos)
+		sy = py + self.V.Padding[2]
 		
 		-- ustaw tło i rysuj kursor
 		cr:set_source( self._cursor_color )
@@ -96,15 +96,15 @@ function TextBox:draw( cr )
 		
 		-- ustaw tło i oblicz pozycje
 		cr:set_source( self._cursor_color )
-		sx = px + self._padding[1] + (self._monospace_dim[1] * self._caret_pos)
+		sx = px + self.V.Padding[1] + (self._monospace_dim[1] * self._caret_pos)
 		
 		-- kursor liniowy
 		if self._cursor_type == TextBox.cursor_type.Line then
-			sy = py + self._padding[2]
+			sy = py + self.V.Padding[2]
 			cr:rectangle( sx, sy, self._cursor_size, self._monospace_dim[2] )
 		-- podkreślenie
 		else
-			sy = py + self._padding[2] + (self._monospace_dim[2] - self._cursor_size)
+			sy = py + self.V.Padding[2] + (self._monospace_dim[2] - self._cursor_size)
 			cr:rectangle( sx, sy, self._monospace_dim[1], self._monospace_dim[2] )
 		end
 		cr:fill()
@@ -126,8 +126,8 @@ function TextBox:fit( width, height )
 	local width  = width
 	local height = height
  
-	local marw = self._padding[1] + self._padding[3]
-	local marh = self._padding[2] + self._padding[4]
+	local marw = self.V.Padding[1] + self.V.Padding[3]
+	local marh = self.V.Padding[2] + self.V.Padding[4]
 
 	-- dodatkowy zapas dla kursora
 	if self._cursor_type == TextBox.cursor_type.Line then
@@ -342,7 +342,7 @@ end
 
 function TextBox:set_text( text, cntchr )
 	-- nie przetwarzaj gdy tekst się nie zmienił
-	if text == self._cairo_layout.text then
+	if text == self.V.TXT.Cairo.text then
 		return
 	end
 
@@ -363,9 +363,9 @@ function TextBox:set_text( text, cntchr )
 	end
 
 	-- ustaw tekst
-	self._cairo_layout.text = self._cursor_type ~= TextBox.cursor_type.Line
+	self.V.TXT.Cairo.text = self._cursor_type ~= TextBox.cursor_type.Line
 							  and text .. " " or text         
-	self._cairo_layout.attributes = nil
+	self.V.TXT.Cairo.attributes = nil
 	
 	-- wyślij sygnał aktualizacji elementu
 	self:emit_signal( "widget::resized" )
@@ -381,10 +381,10 @@ end
 
 function TextBox:get_text()
 	if self._cursor_type ~= TextBox.cursor_type.Line then
-		return self._cairo_layout.text:sub( 1, #self._cairo_layout.text - 1 )
+		return self.V.TXT.Cairo.text:sub( 1, #self.V.TXT.Cairo.text - 1 )
 	end
 		
-	return self._cairo_layout.text
+	return self.V.TXT.Cairo.text
 end
 
 --[[ TextBox:set_font
@@ -398,7 +398,7 @@ function TextBox:set_font( font )
 	local desc = Theme.get_font( font )
 	local name = desc:get_family()
 	
-	self._cairo_layout:set_font_description( desc )
+	self.V.TXT.Cairo:set_font_description( desc )
 	self._is_monospace = false
 	
 	-- sprawdź czy czcionka posiada stałą szerokość znaków
@@ -411,13 +411,13 @@ function TextBox:set_font( font )
 	
 	-- przyspieszanie działania
 	if self._is_monospace then
-		local text = self._cairo_layout:get_text()
+		local text = self.V.TXT.Cairo:get_text()
 		
 		-- ustaw znak do sprawdzenia szerokości i wysokości znaków
-		self._cairo_layout:set_text( "a" )
+		self.V.TXT.Cairo:set_text( "a" )
 		
 		-- pobierz szerokość i wysokość znaku
-		local ink, logical = self._cairo_layout:get_pixel_extents()
+		local ink, logical = self.V.TXT.Cairo:get_pixel_extents()
 		
 		-- zapisz wymiary
 		self._monospace_dim = {
@@ -426,7 +426,7 @@ function TextBox:set_font( font )
 		}
 		
 		-- ustaw poprzedni tekst
-		self._cairo_layout:set_text( text )
+		self.V.TXT.Cairo:set_text( text )
 	end
 	
 	-- wyślij sygnał aktualizacji elementu
@@ -543,7 +543,7 @@ local function new( args )
 	
 	-- lista czcionek
 	if TextBox.monospace_fonts == nil then
-		TextBox.monospace_fonts = Useful.monospace_font_list( retval._cairo_layout )
+		TextBox.monospace_fonts = Useful.monospace_font_list( retval.V.TXT.Cairo )
 	end
 	
 	-- ustaw dodatkowe zmienne

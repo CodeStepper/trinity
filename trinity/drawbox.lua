@@ -38,13 +38,13 @@ local wallpaper = nil
 
 local function redraw_drawbox( self )
 	-- powierzchnia rysowania
-	local surf = surface( self._drawable.surface )
-	if not surf then
+	local ds = surface( self._drawable.surface )
+	if not ds then
 		return
 	end
 	
 	-- przygotuj zmienne do rysowania
-	local cr  = cairo.Context( surf )
+	local cr  = cairo.Context( ds )
 	local dim = self._drawable:geometry()
 	local x, y, width, height = dim.x, dim.y, dim.width, dim.height
 
@@ -192,31 +192,16 @@ function setup_signals( object )
 	capture_event( object._drawin, "property::cursor" )
 	capture_event( object._drawin, "property::width" )
 	capture_event( object._drawin, "property::height" )
+	capture_event( object._drawin, "property::ontop" )
+	capture_event( object._drawin, "property::opacity" )
+	capture_event( object._drawin, "property::struts" )
+	capture_event( object._drawin, "property::visible" )
 	capture_event( object._drawin, "property::x" )
 	capture_event( object._drawin, "property::y" )
-	capture_event( object._drawin, "property::ontop" )
-	capture_event( object._drawin, "property::visible" )
-	capture_event( object._drawin, "property::opacity" )
-	capture_event( object._drawin, "property::structs" )
-end
-
---[[ drawbox:geometry
-=============================================================================================
- Przechwytywanie sygnałów rodzica.
- 
- - geo : tablica z ustawieniami krawędzi elementu (x, y, width, height).
-
- - return : table[4] { x, y, width, height }
-========================================================================================== ]]
-
-function drawbox:geometry( geo )
-	-- pobieranie krawędzi
-	if geo == nil then
-		return self._drawin:geometry( geo )
-	end
-	 
-	-- ustawianie krawędzi
-	self._drawin:geometry( geo )
+	capture_event( object._drawin, "property::geometry" )
+	capture_event( object._drawin, "property::shape_bounding" )
+	capture_event( object._drawin, "property::shape_clip" )
+	capture_event( object._drawin, "property::shape_input" )
 end
 
 --[[ new
@@ -255,7 +240,14 @@ local function new( args )
 	useful.rewrite_functions( drawbox, retval )
 
 	-- dodatkowe funkcje z obiektu _drawin
-	local fcts = { "buttons", "struts", "get_xproperty", "set_xproperty" }
+	local fcts = {
+		"buttons",
+		"struts",
+		"geometry",
+		"get_xproperty",
+		"set_xproperty"
+	}
+
 	for key, val in pairs(fcts) do
 		retval[val] = function( self, ... )
 			return self._drawin[val]( self._drawin, ... )

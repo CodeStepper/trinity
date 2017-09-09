@@ -32,11 +32,6 @@
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 --
 
-local setmetatable = setmetatable
-local type         = type
-local pairs        = pairs
-local table        = table
-
 local Signal = require("trinity.Signal")
 local Visual = require("trinity.Visual")
 local Useful = require("trinity.Useful")
@@ -80,18 +75,21 @@ local function new( args )
 	Signal.initialize( retval )
 
 	-- informacje o kontrolce
-	retval._control = "Label"
-	retval._type    = "widget"
+	retval._Control = "label"
+	retval._Type    = "widget"
 
 	-- przypisz funkcję do obiektu
 	Useful.rewrite_functions( Label, retval )
 	
-	-- pobierz grupy i dodaj grupę tekstu
-	local groups = args.groups or {}
-	table.insert( groups, "text" )
-	
 	-- inicjalizacja grup i funkcji
-	Visual.initialize( retval, groups, args )
+	Visual.initialize( retval, {
+		"background",
+		"image",
+		"padding",
+		"border",
+		"foreground",
+		"text"
+	}, args )
 	
 	-- ustaw dodatkowe zmienne
 	retval:show_empty( args.show_empty or false, false )
@@ -113,7 +111,7 @@ end
 
 function Label:draw( cr )
 	-- nie rysuj gdy wymiary są zerowe...
-	if self._bounds[5] == 0 or self._bounds[6] == 0 then
+	if self.Bounds[5] == 0 or self.Bounds[6] == 0 then
 		return
 	end
 
@@ -137,8 +135,8 @@ function Label:fit( width, height )
 	local new_height = height
 
 	-- obszar do pominięcia (margines wewnętrzny kontrolki)
-	local marw = self._padding[1] + self._padding[3]
-	local marh = self._padding[2] + self._padding[4]
+	local marw = self.V.Padding[1] + self.V.Padding[3]
+	local marh = self.V.Padding[2] + self.V.Padding[4]
 	
 	-- zerowe wymiary (lub jeden z nich) - lub gdy kontrolka się nie zmieści
 	if (width ~= -1 and width <= marw) or (height ~= -1 and height <= marh) then
@@ -151,15 +149,15 @@ function Label:fit( width, height )
 	
 	-- wymiary tekstu
 	local tw, th = self:calc_text_dims( new_width, new_height )
-
-	-- zerowe wymiary
-	if (not self._drawnil and tw == 0) or th == 0 then
-		return 0, 0
-	end
 	
 	if self.calc_image_scale then
 		self:calc_image_scale( width, height )
 		-- self:calc_image_scale( tw + marw, th + marh )
+	end
+
+	-- zerowe wymiary
+	if (not self._drawnil and tw == 0) or th == 0 then
+		return 0, 0
 	end
 
 	-- dodaj wcięcia

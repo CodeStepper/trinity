@@ -271,7 +271,7 @@ end
 
 function Image:draw( cr )
 	-- nie rysuj gdy wymiary są zerowe...
-	if self._bounds[5] == 0 or self._bounds[6] == 0 then
+	if self.Bounds[5] == 0 or self.Bounds[6] == 0 then
 		return
 	end
 
